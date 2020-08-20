@@ -2,7 +2,7 @@
 // Luna_Surveyor.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-20 18:43:32
+// Build Date: 2020-08-20 19:02:14
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -288,6 +288,17 @@ Object.assign(IntIterator.prototype, {
 	,min: null
 	,max: null
 });
+class Lambda {
+	static has(it,elt) {
+		let x = $getIterator(it);
+		while(x.hasNext()) if(x.next() == elt) {
+			return true;
+		}
+		return false;
+	}
+}
+$hxClasses["Lambda"] = Lambda;
+Lambda.__name__ = "Lambda";
 Math.__name__ = "Math";
 class Reflect {
 	static field(o,field) {
@@ -432,6 +443,52 @@ Object.assign(StringBuf.prototype, {
 	,b: null
 });
 class StringTools {
+	static htmlEscape(s,quotes) {
+		let buf_b = "";
+		let _g_offset = 0;
+		let _g_s = s;
+		while(_g_offset < _g_s.length) {
+			let s = _g_s;
+			let index = _g_offset++;
+			let c = s.charCodeAt(index);
+			if(c >= 55296 && c <= 56319) {
+				c = c - 55232 << 10 | s.charCodeAt(index + 1) & 1023;
+			}
+			let c1 = c;
+			if(c1 >= 65536) {
+				++_g_offset;
+			}
+			let code = c1;
+			switch(code) {
+			case 34:
+				if(quotes) {
+					buf_b += "&quot;";
+				} else {
+					buf_b += String.fromCodePoint(code);
+				}
+				break;
+			case 38:
+				buf_b += "&amp;";
+				break;
+			case 39:
+				if(quotes) {
+					buf_b += "&#039;";
+				} else {
+					buf_b += String.fromCodePoint(code);
+				}
+				break;
+			case 60:
+				buf_b += "&lt;";
+				break;
+			case 62:
+				buf_b += "&gt;";
+				break;
+			default:
+				buf_b += String.fromCodePoint(code);
+			}
+		}
+		return buf_b;
+	}
 	static startsWith(s,start) {
 		if(s.length >= start.length) {
 			return s.lastIndexOf(start,0) == 0;
@@ -629,6 +686,328 @@ class Type {
 }
 $hxClasses["Type"] = Type;
 Type.__name__ = "Type";
+class XmlType {
+	static toString(this1) {
+		switch(this1) {
+		case 0:
+			return "Element";
+		case 1:
+			return "PCData";
+		case 2:
+			return "CData";
+		case 3:
+			return "Comment";
+		case 4:
+			return "DocType";
+		case 5:
+			return "ProcessingInstruction";
+		case 6:
+			return "Document";
+		}
+	}
+}
+class Xml {
+	constructor(nodeType) {
+		this.nodeType = nodeType;
+		this.children = [];
+		this.attributeMap = new haxe_ds_StringMap();
+	}
+	get(att) {
+		if(this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		return this.attributeMap.h[att];
+	}
+	set(att,value) {
+		if(this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		this.attributeMap.h[att] = value;
+	}
+	exists(att) {
+		if(this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		return Object.prototype.hasOwnProperty.call(this.attributeMap.h,att);
+	}
+	attributes() {
+		if(this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		return haxe_ds_StringMap.keysIterator(this.attributeMap.h);
+	}
+	elements() {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		let _g = [];
+		let _g1 = 0;
+		let _g2 = this.children;
+		while(_g1 < _g2.length) {
+			let child = _g2[_g1];
+			++_g1;
+			if(child.nodeType == Xml.Element) {
+				_g.push(child);
+			}
+		}
+		return new haxe_iterators_ArrayIterator(_g);
+	}
+	firstElement() {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		let _g = 0;
+		let _g1 = this.children;
+		while(_g < _g1.length) {
+			let child = _g1[_g];
+			++_g;
+			if(child.nodeType == Xml.Element) {
+				return child;
+			}
+		}
+		return null;
+	}
+	addChild(x) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		if(x.parent != null) {
+			x.parent.removeChild(x);
+		}
+		this.children.push(x);
+		x.parent = this;
+	}
+	removeChild(x) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		if(HxOverrides.remove(this.children,x)) {
+			x.parent = null;
+			return true;
+		}
+		return false;
+	}
+	toString() {
+		return haxe_xml_Printer.print(this);
+	}
+	static parse(str) {
+		return haxe_xml_Parser.parse(str);
+	}
+	static createElement(name) {
+		let xml = new Xml(Xml.Element);
+		if(xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeName = name;
+		return xml;
+	}
+	static createPCData(data) {
+		let xml = new Xml(Xml.PCData);
+		if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, unexpected " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeValue = data;
+		return xml;
+	}
+	static createCData(data) {
+		let xml = new Xml(Xml.CData);
+		if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, unexpected " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeValue = data;
+		return xml;
+	}
+	static createComment(data) {
+		let xml = new Xml(Xml.Comment);
+		if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, unexpected " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeValue = data;
+		return xml;
+	}
+	static createDocType(data) {
+		let xml = new Xml(Xml.DocType);
+		if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, unexpected " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeValue = data;
+		return xml;
+	}
+	static createProcessingInstruction(data) {
+		let xml = new Xml(Xml.ProcessingInstruction);
+		if(xml.nodeType == Xml.Document || xml.nodeType == Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, unexpected " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		xml.nodeValue = data;
+		return xml;
+	}
+	static createDocument() {
+		return new Xml(Xml.Document);
+	}
+}
+$hxClasses["Xml"] = Xml;
+Xml.__name__ = "Xml";
+Object.assign(Xml.prototype, {
+	__class__: Xml
+	,nodeType: null
+	,nodeName: null
+	,nodeValue: null
+	,parent: null
+	,children: null
+	,attributeMap: null
+});
+class core_Amaryllis {
+	static createEventEmitter() {
+		return new PIXI.utils.EventEmitter();
+	}
+	static createDie(sides) {
+		return new core_Die(sides);
+	}
+	static elementName(entity) {
+		return entity.constructor.name;
+	}
+	static getParams(regEx) {
+	}
+	static lerp(start,end,amount) {
+		return start + (end - start) * amount;
+	}
+	static currentScene() {
+		return SceneManager._scene;
+	}
+	static isImagePath(path) {
+		if(path.split("/").length > 2) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	static loadImage(path,hue) {
+		if(hue == null) {
+			hue = 0;
+		}
+		if(path.split("/").length > 2) {
+			return ImageManager.loadNormalBitmap(path + ".png",hue);
+		} else {
+			return null;
+		}
+	}
+	static isNwjs() {
+		return rm.core.Utils.isNwjs();
+	}
+	static isMobile() {
+		return rm.core.Utils.isMobileDevice();
+	}
+	static isTest() {
+		return rm.core.Utils.isOptionValid("test");
+	}
+	static once(f) {
+		let count = 0;
+		return function() {
+			if(count > 0) {
+				return null;
+			} else {
+				count += 1;
+				return f();
+			}
+		};
+	}
+	static times(iterations,f) {
+		let _g = 0;
+		while(_g < iterations) {
+			++_g;
+			f();
+		}
+	}
+	static safeParse(string) {
+		try {
+			return JSON.parse(string);
+		} catch( _g ) {
+			return haxe_Exception.caught(_g);
+		}
+	}
+	static lines(num) {
+		return Window_Base.prototype.lineHeight() * num;
+	}
+	static rgbToHex(red,green,blue) {
+		return PIXI.utils.hex2string(PIXI.utils.rgb2hex([red,green,blue]));
+	}
+	static rgbToCss(red,green,blue) {
+		return rm.core.Utils.rgbToCssColor(red,green,blue);
+	}
+	static clear(array) {
+		array.length = 0;
+		return array;
+	}
+	static take(amount,list) {
+		return list.slice(0,amount);
+	}
+	static drop(amount,list) {
+		return list.slice(amount * -1);
+	}
+	static arrayEquals(arr1,arr2) {
+		if(arr1.length == arr2.length) {
+			return !Lambda.has(arr1,function(el,index) {
+				return el != arr2[index];
+			});
+		} else {
+			return false;
+		}
+	}
+	static addWindowToScene($window) {
+		SceneManager._scene._windowLayer.addChild($window);
+	}
+}
+$hxClasses["core.Amaryllis"] = core_Amaryllis;
+core_Amaryllis.__name__ = "core.Amaryllis";
+class core_TBox {
+	static setField(this1,fieldName,value) {
+		this1[fieldName] = value;
+	}
+	static get_dyn(this1) {
+		return this1;
+	}
+	static set_dyn(this1,obj) {
+		return this1;
+	}
+	static set(this1,f) {
+		f(this1);
+	}
+}
+core_TBox.__properties__ = {set_dyn: "set_dyn",get_dyn: "get_dyn"};
+class core_Die {
+	constructor(sides) {
+		let _g = [];
+		let _g1 = 0;
+		while(_g1 < sides) _g.push(_g1++ + 1);
+		this.sides = _g;
+	}
+	roll() {
+		return this.sides[core_Math.randomInt() * this.sides.length];
+	}
+}
+$hxClasses["core.Die"] = core_Die;
+core_Die.__name__ = "core.Die";
+Object.assign(core_Die.prototype, {
+	__class__: core_Die
+	,sides: null
+});
+class core_Math {
+	static randomInt() {
+		return Math.round(Math.random());
+	}
+	static randomRangeInt(start,end) {
+		let _g = [];
+		let _g1 = start;
+		while(_g1 < end) _g.push(_g1++);
+		return _g[core_Math.randomInt() * _g.length];
+	}
+	static clampf(num,min,max) {
+		return Math.min(Math.max(num,min),max);
+	}
+	static clamp(num,min,max) {
+		return Math.round(Math.min(Math.max(num,min),max));
+	}
+}
 var haxe_StackItem = $hxEnums["haxe.StackItem"] = { __ename__ : true, __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"]
 	,CFunction: {_hx_index:0,__enum__:"haxe.StackItem",toString:$estr}
 	,Module: ($_=function(m) { return {_hx_index:1,m:m,__enum__:"haxe.StackItem",toString:$estr}; },$_.__params__ = ["m"],$_)
@@ -1690,6 +2069,79 @@ var haxe_io_Error = $hxEnums["haxe.io.Error"] = { __ename__ : true, __constructs
 	,OutsideBounds: {_hx_index:2,__enum__:"haxe.io.Error",toString:$estr}
 	,Custom: ($_=function(e) { return {_hx_index:3,e:e,__enum__:"haxe.io.Error",toString:$estr}; },$_.__params__ = ["e"],$_)
 };
+class haxe_io_Path {
+	static normalize(path) {
+		let slash = "/";
+		path = path.split("\\").join(slash);
+		if(path == slash) {
+			return slash;
+		}
+		let target = [];
+		let _g = 0;
+		let _g1 = path.split(slash);
+		while(_g < _g1.length) {
+			let token = _g1[_g];
+			++_g;
+			if(token == ".." && target.length > 0 && target[target.length - 1] != "..") {
+				target.pop();
+			} else if(token == "") {
+				if(target.length > 0 || HxOverrides.cca(path,0) == 47) {
+					target.push(token);
+				}
+			} else if(token != ".") {
+				target.push(token);
+			}
+		}
+		let acc_b = "";
+		let colon = false;
+		let slashes = false;
+		let _g2_offset = 0;
+		let _g2_s = target.join(slash);
+		while(_g2_offset < _g2_s.length) {
+			let s = _g2_s;
+			let index = _g2_offset++;
+			let c = s.charCodeAt(index);
+			if(c >= 55296 && c <= 56319) {
+				c = c - 55232 << 10 | s.charCodeAt(index + 1) & 1023;
+			}
+			let c1 = c;
+			if(c1 >= 65536) {
+				++_g2_offset;
+			}
+			let c2 = c1;
+			switch(c2) {
+			case 47:
+				if(!colon) {
+					slashes = true;
+				} else {
+					let i = c2;
+					colon = false;
+					if(slashes) {
+						acc_b += "/";
+						slashes = false;
+					}
+					acc_b += String.fromCodePoint(i);
+				}
+				break;
+			case 58:
+				acc_b += ":";
+				colon = true;
+				break;
+			default:
+				let i = c2;
+				colon = false;
+				if(slashes) {
+					acc_b += "/";
+					slashes = false;
+				}
+				acc_b += String.fromCodePoint(i);
+			}
+		}
+		return acc_b;
+	}
+}
+$hxClasses["haxe.io.Path"] = haxe_io_Path;
+haxe_io_Path.__name__ = "haxe.io.Path";
 class haxe_iterators_ArrayIterator {
 	constructor(array) {
 		this.current = 0;
@@ -1797,6 +2249,11 @@ class haxe_ui_core_IClonable {
 $hxClasses["haxe.ui.core.IClonable"] = haxe_ui_core_IClonable;
 haxe_ui_core_IClonable.__name__ = "haxe.ui.core.IClonable";
 haxe_ui_core_IClonable.__isInterface__ = true;
+Object.assign(haxe_ui_core_IClonable.prototype, {
+	__class__: haxe_ui_core_IClonable
+	,cloneComponent: null
+	,self: null
+});
 class haxe_ui_core_ComponentContainer extends haxe_ui_core_ComponentCommon {
 	constructor() {
 		if(haxe_ui_backend_ComponentSurface._hx_skip_constructor) {
@@ -1820,12 +2277,39 @@ class haxe_ui_core_ComponentContainer extends haxe_ui_core_ComponentCommon {
 	get_isReady() {
 		return this._ready;
 	}
+	get_childComponents() {
+		if(this._children == null) {
+			return [];
+		}
+		return this._children;
+	}
 	registerBehaviours() {
 		this.behaviours.register("disabled",haxe_ui_core_ComponentDisabledBehaviour,haxe_ui_util_Variant.fromBool(false));
 		this.behaviours.register("text",haxe_ui_behaviours_DefaultBehaviour);
 		this.behaviours.register("value",haxe_ui_core_ComponentValueBehaviour);
 	}
 	addComponent(child) {
+		return null;
+	}
+	addComponentAt(child,index) {
+		return null;
+	}
+	removeComponent(child,dispose,invalidate) {
+		if(invalidate == null) {
+			invalidate = true;
+		}
+		if(dispose == null) {
+			dispose = true;
+		}
+		return null;
+	}
+	removeComponentAt(index,dispose,invalidate) {
+		if(invalidate == null) {
+			invalidate = true;
+		}
+		if(dispose == null) {
+			dispose = true;
+		}
 		return null;
 	}
 	get_id() {
@@ -1895,11 +2379,12 @@ Object.assign(haxe_ui_core_ComponentContainer.prototype, {
 	,_ready: null
 	,isReady: null
 	,_children: null
+	,childComponents: null
 	,_layout: null
 	,_layoutLocked: null
 	,_style: null
 	,_id: null
-	,__properties__: {set_value: "set_value",get_value: "get_value",set_text: "set_text",get_text: "get_text",set_disabled: "set_disabled",get_disabled: "get_disabled",set_id: "set_id",get_id: "get_id",get_isReady: "get_isReady"}
+	,__properties__: {set_value: "set_value",get_value: "get_value",set_text: "set_text",get_text: "get_text",set_disabled: "set_disabled",get_disabled: "get_disabled",set_id: "set_id",get_id: "get_id",get_childComponents: "get_childComponents",get_isReady: "get_isReady"}
 });
 class haxe_ui_core_ComponentEvents extends haxe_ui_core_ComponentContainer {
 	constructor() {
@@ -2208,6 +2693,30 @@ class haxe_ui_core_ComponentValidation extends haxe_ui_core_ComponentEvents {
 		this._invalidateCount = 0;
 		haxe_ui_validation_ValidationManager.get_instance().add(js_Boot.__cast(this , haxe_ui_core_Component));
 	}
+	invalidateComponentData() {
+		this.invalidateComponent("data");
+	}
+	invalidateComponentLayout() {
+		if(this._layout == null || this._layoutLocked == true) {
+			return;
+		}
+		this.invalidateComponent("layout");
+	}
+	invalidateComponentPosition() {
+		this.invalidateComponent("position");
+	}
+	invalidateComponentDisplay() {
+		this.invalidateComponent("display");
+	}
+	invalidateComponentStyle(force) {
+		if(force == null) {
+			force = false;
+		}
+		this.invalidateComponent("style");
+		if(force == true) {
+			this._style = null;
+		}
+	}
 	validateComponent(nextFrame) {
 		if(nextFrame == null) {
 			nextFrame = true;
@@ -2245,6 +2754,13 @@ class haxe_ui_core_ComponentValidation extends haxe_ui_core_ComponentEvents {
 			}
 		}
 		this._isValidating = false;
+	}
+	validateNow() {
+		let _g = 0;
+		let _g1 = this._children == null ? [] : this._children;
+		while(_g < _g1.length) _g1[_g++].validateNow();
+		this.invalidateComponent();
+		this.syncComponentValidation(false);
 	}
 	syncComponentValidation(nextFrame) {
 		if(nextFrame == null) {
@@ -2352,6 +2868,10 @@ class haxe_ui_core_ComponentLayout extends haxe_ui_core_ComponentValidation {
 	get_style() {
 		return this._style;
 	}
+	set_style(value) {
+		this._style = value;
+		return value;
+	}
 	registerBehaviours() {
 		super.registerBehaviours();
 	}
@@ -2373,7 +2893,7 @@ haxe_ui_core_ComponentLayout.__name__ = "haxe.ui.core.ComponentLayout";
 haxe_ui_core_ComponentLayout.__super__ = haxe_ui_core_ComponentValidation;
 Object.assign(haxe_ui_core_ComponentLayout.prototype, {
 	__class__: haxe_ui_core_ComponentLayout
-	,__properties__: Object.assign({}, haxe_ui_core_ComponentValidation.prototype.__properties__, {get_style: "get_style"})
+	,__properties__: Object.assign({}, haxe_ui_core_ComponentValidation.prototype.__properties__, {set_style: "set_style",get_style: "get_style"})
 });
 class haxe_ui_core_ComponentBounds extends haxe_ui_core_ComponentLayout {
 	constructor() {
@@ -2706,11 +3226,47 @@ class haxe_ui_backend_ComponentBase extends haxe_ui_core_ComponentBounds {
 		this._className = null;
 		super._hx_constructor();
 	}
+	handleCreate(native) {
+	}
+	handlePosition(left,top,style) {
+	}
+	handleSize(width,height,style) {
+	}
+	handleReady() {
+	}
+	handleClipRect(value) {
+	}
+	handleVisibility(show) {
+	}
 	getComponentOffset() {
 		return new haxe_ui_geom_Point(0,0);
 	}
 	get_isNativeScroller() {
 		return false;
+	}
+	handleFrameworkProperty(id,value) {
+	}
+	handleSetComponentIndex(child,index) {
+	}
+	handleAddComponent(child) {
+		return child;
+	}
+	handleAddComponentAt(child,index) {
+		return child;
+	}
+	handleRemoveComponent(child,dispose) {
+		if(dispose == null) {
+			dispose = true;
+		}
+		return child;
+	}
+	handleRemoveComponentAt(index,dispose) {
+		if(dispose == null) {
+			dispose = true;
+		}
+		return null;
+	}
+	applyStyle(style) {
 	}
 	mapEvent(type,listener) {
 	}
@@ -2770,6 +3326,24 @@ class haxe_ui_backend_ComponentBase extends haxe_ui_core_ComponentBounds {
 	handlePreReposition() {
 	}
 	handlePostReposition() {
+	}
+	getClassProperty(name) {
+		let v = null;
+		if(this._classProperties != null) {
+			v = this._classProperties.h[name];
+		}
+		if(v == null) {
+			let c = js_Boot.getClass(this);
+			let c1 = c.__name__.toLowerCase() + "." + name;
+			v = haxe_ui_Toolkit.properties.h[c1];
+		}
+		return v;
+	}
+	setClassProperty(name,value) {
+		if(this._classProperties == null) {
+			this._classProperties = new haxe_ds_StringMap();
+		}
+		this._classProperties.h[name] = value;
 	}
 	get_hasNativeEntry() {
 		if(this._hasNativeEntry == null) {
@@ -2849,6 +3423,7 @@ Object.assign(haxe_ui_backend_ComponentBase.prototype, {
 	,_textDisplay: null
 	,_textInput: null
 	,_imageDisplay: null
+	,_classProperties: null
 	,_hasNativeEntry: null
 	,hasNativeEntry: null
 	,_className: null
@@ -3244,6 +3819,9 @@ class haxe_ui_backend_ComponentImpl extends haxe_ui_backend_ComponentBase {
 		}
 		return this._canvas;
 	}
+	hasCanvas() {
+		return this._canvas != null;
+	}
 	removeCanvas() {
 		if(this._canvas != null && this.element.contains(this._canvas)) {
 			this.element.removeChild(this._canvas);
@@ -3505,14 +4083,21 @@ haxe_ui_validation_IValidating.__isInterface__ = true;
 Object.assign(haxe_ui_validation_IValidating.prototype, {
 	__class__: haxe_ui_validation_IValidating
 	,get_depth: null
+	,set_depth: null
 	,validateComponent: null
-	,__properties__: {get_depth: "get_depth"}
+	,updateComponentDisplay: null
+	,__properties__: {set_depth: "set_depth",get_depth: "get_depth"}
 });
 class haxe_ui_core_IComponentBase {
 }
 $hxClasses["haxe.ui.core.IComponentBase"] = haxe_ui_core_IComponentBase;
 haxe_ui_core_IComponentBase.__name__ = "haxe.ui.core.IComponentBase";
 haxe_ui_core_IComponentBase.__isInterface__ = true;
+Object.assign(haxe_ui_core_IComponentBase.prototype, {
+	__class__: haxe_ui_core_IComponentBase
+	,mapEvent: null
+	,handleAddComponent: null
+});
 class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 	constructor() {
 		if(haxe_ui_backend_ComponentSurface._hx_skip_constructor) {
@@ -3654,6 +4239,20 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 			this.set_layout(this.createLayout());
 		}
 		this.behaviours.restore();
+		return value;
+	}
+	get_animatable() {
+		return false;
+	}
+	set_animatable(value) {
+		if(this._animatable != value) {
+			if(value == false && this._componentAnimation != null) {
+				this._componentAnimation.stop();
+				this._componentAnimation = null;
+			}
+			this._animatable = value;
+		}
+		this._animatable = value;
 		return value;
 	}
 	get_componentAnimation() {
@@ -4360,6 +4959,18 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		this._cachedStyleSheetRef = s;
 		return s;
 	}
+	set_styleSheet(value) {
+		this._styleSheet = value;
+		this.resetCachedStyleSheetRef();
+		return value;
+	}
+	resetCachedStyleSheetRef() {
+		this._cachedStyleSheetRef = null;
+		this._useCachedStyleSheetRef = false;
+		let _g = 0;
+		let _g1 = this._children == null ? [] : this._children;
+		while(_g < _g1.length) _g1[_g++].resetCachedStyleSheetRef();
+	}
 	get_includeInLayout() {
 		if(this._hidden == true) {
 			return false;
@@ -4461,6 +5072,10 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 	}
 	onMoved() {
 	}
+	set_script(value) {
+		this._script = value;
+		return value;
+	}
 	executeScriptCall(expr,variables) {
 		let line = new hscript_Parser().parseString(expr);
 		let interp = this.findScriptInterp();
@@ -4541,6 +5156,9 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 			}
 		}
 	}
+	get_scriptEvents() {
+		return this._scriptEvents;
+	}
 	addScriptEvent(event,script) {
 		event = event.toLowerCase();
 		let eventName = StringTools.startsWith(event,"on") ? event.substring(2,event.length) : event;
@@ -4569,6 +5187,23 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		let list = [];
 		haxe_ui_core_Component.addNamedComponentsFrom(this,list);
 		return list;
+	}
+	onThemeChanged() {
+		this._initialSizeApplied = false;
+		if(this._style != null) {
+			if(this._style.initialWidth != null) {
+				this.set_width(0);
+			}
+			if(this._style.initialPercentWidth != null) {
+				this.set_percentWidth(null);
+			}
+			if(this._style.initialHeight != null) {
+				this.set_height(0);
+			}
+			if(this._style.initialPercentHeight != null) {
+				this.set_percentHeight(null);
+			}
+		}
 	}
 	initializeComponent() {
 		if(this._isInitialized == true) {
@@ -4848,6 +5483,106 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 	registerBehaviours() {
 		super.registerBehaviours();
 	}
+	get_color() {
+		if(this.customStyle.color != null) {
+			return this.customStyle.color;
+		}
+		if(this.get_style() == null || this.get_style().color == null) {
+			return null;
+		}
+		return this.get_style().color;
+	}
+	set_color(value) {
+		if(this.customStyle.color == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.color = haxe_ui_util_Color.toInt(value);
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_backgroundColor() {
+		if(this.customStyle.backgroundColor != null) {
+			return this.customStyle.backgroundColor;
+		}
+		if(this.get_style() == null || this.get_style().backgroundColor == null) {
+			return null;
+		}
+		return this.get_style().backgroundColor;
+	}
+	set_backgroundColor(value) {
+		if(this.customStyle.backgroundColor == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.backgroundColor = haxe_ui_util_Color.toInt(value);
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_borderColor() {
+		if(this.customStyle.borderColor != null) {
+			return this.customStyle.borderColor;
+		}
+		if(this.get_style() == null || this.get_style().borderColor == null) {
+			return null;
+		}
+		return this.get_style().borderColor;
+	}
+	set_borderColor(value) {
+		if(this.customStyle.borderColor == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.borderColor = haxe_ui_util_Color.toInt(value);
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_borderSize() {
+		if(this.customStyle.borderSize != null) {
+			return this.customStyle.borderSize;
+		}
+		if(this.get_style() == null || this.get_style().borderSize == null) {
+			return null;
+		}
+		return this.get_style().borderSize;
+	}
+	set_borderSize(value) {
+		if(this.customStyle.borderSize == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.borderSize = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_borderRadius() {
+		if(this.customStyle.borderRadius != null) {
+			return this.customStyle.borderRadius;
+		}
+		if(this.get_style() == null || this.get_style().borderRadius == null) {
+			return null;
+		}
+		return this.get_style().borderRadius;
+	}
+	set_borderRadius(value) {
+		if(this.customStyle.borderRadius == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.borderRadius = value;
+		this.invalidateComponent("style");
+		return value;
+	}
 	get_paddingLeft() {
 		if(this.customStyle.paddingLeft != null) {
 			return this.customStyle.paddingLeft;
@@ -4857,6 +5592,37 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		}
 		return this.get_style().paddingLeft;
 	}
+	set_paddingLeft(value) {
+		if(this.customStyle.paddingLeft == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.paddingLeft = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_paddingRight() {
+		if(this.customStyle.paddingRight != null) {
+			return this.customStyle.paddingRight;
+		}
+		if(this.get_style() == null || this.get_style().paddingRight == null) {
+			return null;
+		}
+		return this.get_style().paddingRight;
+	}
+	set_paddingRight(value) {
+		if(this.customStyle.paddingRight == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.paddingRight = value;
+		this.invalidateComponent("style");
+		return value;
+	}
 	get_paddingTop() {
 		if(this.customStyle.paddingTop != null) {
 			return this.customStyle.paddingTop;
@@ -4865,6 +5631,146 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 			return null;
 		}
 		return this.get_style().paddingTop;
+	}
+	set_paddingTop(value) {
+		if(this.customStyle.paddingTop == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.paddingTop = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_paddingBottom() {
+		if(this.customStyle.paddingBottom != null) {
+			return this.customStyle.paddingBottom;
+		}
+		if(this.get_style() == null || this.get_style().paddingBottom == null) {
+			return null;
+		}
+		return this.get_style().paddingBottom;
+	}
+	set_paddingBottom(value) {
+		if(this.customStyle.paddingBottom == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.paddingBottom = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_marginLeft() {
+		if(this.customStyle.marginLeft != null) {
+			return this.customStyle.marginLeft;
+		}
+		if(this.get_style() == null || this.get_style().marginLeft == null) {
+			return null;
+		}
+		return this.get_style().marginLeft;
+	}
+	set_marginLeft(value) {
+		if(this.customStyle.marginLeft == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.marginLeft = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_marginRight() {
+		if(this.customStyle.marginRight != null) {
+			return this.customStyle.marginRight;
+		}
+		if(this.get_style() == null || this.get_style().marginRight == null) {
+			return null;
+		}
+		return this.get_style().marginRight;
+	}
+	set_marginRight(value) {
+		if(this.customStyle.marginRight == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.marginRight = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_marginTop() {
+		if(this.customStyle.marginTop != null) {
+			return this.customStyle.marginTop;
+		}
+		if(this.get_style() == null || this.get_style().marginTop == null) {
+			return null;
+		}
+		return this.get_style().marginTop;
+	}
+	set_marginTop(value) {
+		if(this.customStyle.marginTop == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.marginTop = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_marginBottom() {
+		if(this.customStyle.marginBottom != null) {
+			return this.customStyle.marginBottom;
+		}
+		if(this.get_style() == null || this.get_style().marginBottom == null) {
+			return null;
+		}
+		return this.get_style().marginBottom;
+	}
+	set_marginBottom(value) {
+		if(this.customStyle.marginBottom == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.marginBottom = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_clip() {
+		if(this.customStyle.clip != null) {
+			return this.customStyle.clip;
+		}
+		if(this.get_style() == null || this.get_style().clip == null) {
+			return null;
+		}
+		return this.get_style().clip;
+	}
+	set_clip(value) {
+		if(this.customStyle.clip == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.clip = value;
+		this.invalidateComponent("style");
+		return value;
+	}
+	get_opacity() {
+		if(this.customStyle.opacity != null) {
+			return this.customStyle.opacity;
+		}
+		if(this.get_style() == null || this.get_style().opacity == null) {
+			return null;
+		}
+		return this.get_style().opacity;
 	}
 	set_opacity(value) {
 		if(this.customStyle.opacity == value) {
@@ -4876,6 +5782,15 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		this.customStyle.opacity = value;
 		this.invalidateComponent("style");
 		return value;
+	}
+	get_horizontalAlign() {
+		if(this.customStyle.horizontalAlign != null) {
+			return this.customStyle.horizontalAlign;
+		}
+		if(this.get_style() == null || this.get_style().horizontalAlign == null) {
+			return null;
+		}
+		return this.get_style().horizontalAlign;
 	}
 	set_horizontalAlign(value) {
 		if(this.customStyle.horizontalAlign == value) {
@@ -4893,6 +5808,15 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 			}
 		}
 		return value;
+	}
+	get_verticalAlign() {
+		if(this.customStyle.verticalAlign != null) {
+			return this.customStyle.verticalAlign;
+		}
+		if(this.get_style() == null || this.get_style().verticalAlign == null) {
+			return null;
+		}
+		return this.get_style().verticalAlign;
 	}
 	set_verticalAlign(value) {
 		if(this.customStyle.verticalAlign == value) {
@@ -4947,6 +5871,28 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		}
 		return value;
 	}
+	set_onRightClick(value) {
+		if(this.__onRightClick != null) {
+			this.unregisterEvent("rightclick",this.__onRightClick);
+			this.__onRightClick = null;
+		}
+		if(value != null) {
+			this.__onRightClick = value;
+			this.registerEvent("rightclick",value);
+		}
+		return value;
+	}
+	set_onChange(value) {
+		if(this.__onChange != null) {
+			this.unregisterEvent("change",this.__onChange);
+			this.__onChange = null;
+		}
+		if(value != null) {
+			this.__onChange = value;
+			this.registerEvent("change",value);
+		}
+		return value;
+	}
 	static addNamedComponentsFrom(parent,list) {
 		if(parent == null) {
 			return;
@@ -4985,7 +5931,9 @@ Object.assign(haxe_ui_core_Component.prototype, {
 	,scriptAccess: null
 	,_interp: null
 	,_script: null
+	,script: null
 	,_scriptEvents: null
+	,scriptEvents: null
 	,namedComponents: null
 	,_initialSizeApplied: null
 	,cssName: null
@@ -4995,11 +5943,79 @@ Object.assign(haxe_ui_core_Component.prototype, {
 	,onAnimationEnd: null
 	,__onClick: null
 	,onClick: null
-	,__properties__: Object.assign({}, haxe_ui_backend_ComponentImpl.prototype.__properties__, {set_onClick: "set_onClick",set_onAnimationEnd: "set_onAnimationEnd",set_onAnimationStart: "set_onAnimationStart",set_verticalAlign: "set_verticalAlign",set_horizontalAlign: "set_horizontalAlign",set_opacity: "set_opacity",get_paddingTop: "get_paddingTop",get_paddingLeft: "get_paddingLeft",get_cssName: "get_cssName",get_namedComponents: "get_namedComponents",set_layout: "set_layout",get_layout: "get_layout",set_includeInLayout: "set_includeInLayout",get_includeInLayout: "get_includeInLayout",get_styleSheet: "get_styleSheet",set_styleString: "set_styleString",get_styleString: "get_styleString",set_styleNames: "set_styleNames",get_styleNames: "get_styleNames",set_customStyle: "set_customStyle",set_hidden: "set_hidden",get_hidden: "get_hidden",get_numComponents: "get_numComponents",get_rootComponent: "get_rootComponent",get_screen: "get_screen",set_componentAnimation: "set_componentAnimation",get_componentAnimation: "get_componentAnimation",set_native: "set_native",get_native: "get_native"})
+	,__onRightClick: null
+	,onRightClick: null
+	,__onChange: null
+	,onChange: null
+	,__properties__: Object.assign({}, haxe_ui_backend_ComponentImpl.prototype.__properties__, {set_onChange: "set_onChange",set_onRightClick: "set_onRightClick",set_onClick: "set_onClick",set_onAnimationEnd: "set_onAnimationEnd",set_onAnimationStart: "set_onAnimationStart",set_verticalAlign: "set_verticalAlign",get_verticalAlign: "get_verticalAlign",set_horizontalAlign: "set_horizontalAlign",get_horizontalAlign: "get_horizontalAlign",set_opacity: "set_opacity",get_opacity: "get_opacity",set_clip: "set_clip",get_clip: "get_clip",set_marginBottom: "set_marginBottom",get_marginBottom: "get_marginBottom",set_marginTop: "set_marginTop",get_marginTop: "get_marginTop",set_marginRight: "set_marginRight",get_marginRight: "get_marginRight",set_marginLeft: "set_marginLeft",get_marginLeft: "get_marginLeft",set_paddingBottom: "set_paddingBottom",get_paddingBottom: "get_paddingBottom",set_paddingTop: "set_paddingTop",get_paddingTop: "get_paddingTop",set_paddingRight: "set_paddingRight",get_paddingRight: "get_paddingRight",set_paddingLeft: "set_paddingLeft",get_paddingLeft: "get_paddingLeft",set_borderRadius: "set_borderRadius",get_borderRadius: "get_borderRadius",set_borderSize: "set_borderSize",get_borderSize: "get_borderSize",set_borderColor: "set_borderColor",get_borderColor: "get_borderColor",set_backgroundColor: "set_backgroundColor",get_backgroundColor: "get_backgroundColor",set_color: "set_color",get_color: "get_color",get_cssName: "get_cssName",get_namedComponents: "get_namedComponents",get_scriptEvents: "get_scriptEvents",set_script: "set_script",set_layout: "set_layout",get_layout: "get_layout",set_includeInLayout: "set_includeInLayout",get_includeInLayout: "get_includeInLayout",set_styleSheet: "set_styleSheet",get_styleSheet: "get_styleSheet",set_styleString: "set_styleString",get_styleString: "get_styleString",set_styleNames: "set_styleNames",get_styleNames: "get_styleNames",set_customStyle: "set_customStyle",set_hidden: "set_hidden",get_hidden: "get_hidden",get_numComponents: "get_numComponents",get_rootComponent: "get_rootComponent",get_screen: "get_screen",set_componentAnimation: "set_componentAnimation",get_componentAnimation: "get_componentAnimation",set_animatable: "set_animatable",get_animatable: "get_animatable",set_native: "set_native",get_native: "get_native"})
+});
+class haxe_ui_Preloader extends haxe_ui_core_Component {
+	constructor() {
+		super();
+		this.set_id("preloader");
+		this.set_styleString("width:auto;height:auto;");
+	}
+	createChildren() {
+		let label = new haxe_ui_components_Label();
+		label.set_text("Loading");
+		this.addComponent(label);
+	}
+	validateComponentLayout() {
+		let b = super.validateComponentLayout();
+		if(this.get_width() > 0 && this.get_height() > 0) {
+			this.set_left(haxe_ui_core_Screen.get_instance().get_width() / 2 - this.get_width() / 2);
+			this.set_top(haxe_ui_core_Screen.get_instance().get_height() / 2 - this.get_height() / 2);
+		}
+		return b;
+	}
+	progress(current,max) {
+		this._current = current;
+		this._max = max;
+		if(current > 0) {
+			let label = this.findComponent(null,haxe_ui_components_Label);
+			let text = label.get_text();
+			if(StringTools.endsWith(text,"....")) {
+				text = "Loading";
+			}
+			label.set_text(text);
+		}
+	}
+	increment() {
+		this.progress(this._current + 1,this._max);
+	}
+	complete() {
+		haxe_ui_core_Screen.get_instance().removeComponent(this);
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_Preloader();
+	}
+}
+$hxClasses["haxe.ui.Preloader"] = haxe_ui_Preloader;
+haxe_ui_Preloader.__name__ = "haxe.ui.Preloader";
+haxe_ui_Preloader.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_Preloader.prototype, {
+	__class__: haxe_ui_Preloader
+	,_current: null
+	,_max: null
 });
 class haxe_ui_util_Properties {
 	constructor() {
 		this._props = new haxe_ds_StringMap();
+	}
+	exists(name) {
+		return Object.prototype.hasOwnProperty.call(this._props.h,name);
 	}
 	getProp(name,defaultValue) {
 		let v = defaultValue;
@@ -5007,6 +6023,60 @@ class haxe_ui_util_Properties {
 			v = this._props.h[name];
 		}
 		return v;
+	}
+	getPropInt(name,defaultValue) {
+		if(defaultValue == null) {
+			defaultValue = 0;
+		}
+		let v = defaultValue;
+		let stringValue = this.getProp(name);
+		if(stringValue != null) {
+			v = Std.parseInt(stringValue);
+		}
+		return v;
+	}
+	getPropBool(name,defaultValue) {
+		if(defaultValue == null) {
+			defaultValue = false;
+		}
+		let v = defaultValue;
+		let stringValue = this.getProp(name);
+		if(stringValue != null) {
+			v = stringValue == "true";
+		}
+		return v;
+	}
+	getPropCol(name,defaultValue) {
+		if(defaultValue == null) {
+			defaultValue = 0;
+		}
+		let v = defaultValue;
+		let stringValue = this.getProp(name);
+		if(stringValue != null) {
+			let s = stringValue;
+			if(StringTools.startsWith(stringValue,"#")) {
+				s = stringValue.substring(1,stringValue.length);
+			} else if(StringTools.startsWith(stringValue,"0x")) {
+				s = stringValue.substring(2,stringValue.length);
+			}
+			v = Std.parseInt("0x" + s);
+		}
+		return v;
+	}
+	setProp(name,value) {
+		this._props.h[name] = value;
+	}
+	names() {
+		return haxe_ds_StringMap.keysIterator(this._props.h);
+	}
+	addAll(p) {
+		let name = p.names();
+		while(name.hasNext()) {
+			let name1 = name.next();
+			let this1 = this._props;
+			let value = p.getProp(name1);
+			this1.h[name1] = value;
+		}
 	}
 }
 $hxClasses["haxe.ui.util.Properties"] = haxe_ui_util_Properties;
@@ -5174,6 +6244,12 @@ class haxe_ui_styles_CompositeStyleSheet {
 		}
 		return this._animations;
 	}
+	addStyleSheet(styleSheet) {
+		this._styleSheets.push(styleSheet);
+	}
+	removeStyleSheet(styleSheet) {
+		HxOverrides.remove(this._styleSheets,styleSheet);
+	}
 	parse(css,styleSheetName,invalidateAll) {
 		if(invalidateAll == null) {
 			invalidateAll = false;
@@ -5229,6 +6305,21 @@ Object.assign(haxe_ui_styles_CompositeStyleSheet.prototype, {
 	,__properties__: {get_animations: "get_animations"}
 });
 class haxe_ui_Toolkit {
+	static get_theme() {
+		return haxe_ui_Toolkit._theme;
+	}
+	static set_theme(value) {
+		if(haxe_ui_Toolkit._theme == value) {
+			return value;
+		}
+		haxe_ui_Toolkit._theme = value;
+		if(haxe_ui_Toolkit._initialized == true) {
+			haxe_ui_themes_ThemeManager.get_instance().applyTheme(haxe_ui_Toolkit._theme);
+			haxe_ui_core_Screen.get_instance().onThemeChanged();
+			haxe_ui_core_Screen.get_instance().invalidateAll();
+		}
+		return value;
+	}
 	static get_backendProperties() {
 		haxe_ui_Toolkit.buildBackend();
 		return haxe_ui_Toolkit._backendProperties;
@@ -5723,11 +6814,215 @@ class haxe_ui_Toolkit {
 			}
 		}
 	}
+	static messageBox(message,title,type,modal,callback) {
+		if(modal == null) {
+			modal = true;
+		}
+		if(type == null) {
+			type = "info";
+		} else if(type == "info") {
+			type = "info";
+		} else if(type == "question") {
+			type = "question";
+		} else if(type == "warning") {
+			type = "warning";
+		} else if(type == "error") {
+			type = "error";
+		}
+		let messageBox = new haxe_ui_containers_dialogs_MessageBox();
+		messageBox.set_type(type);
+		messageBox.set_message(message);
+		messageBox.modal = modal;
+		if(title != null) {
+			messageBox.set_title(title);
+		}
+		messageBox.show();
+		if(callback != null) {
+			messageBox.registerEvent("dialogClosed",function(e) {
+				callback(e.button);
+			});
+		}
+		return messageBox;
+	}
+	static dialog(contents,title,buttons,modal,callback) {
+		if(modal == null) {
+			modal = true;
+		}
+		let dialog = new haxe_ui_containers_dialogs_Dialog();
+		dialog.modal = modal;
+		if(title != null) {
+			dialog.set_title(title);
+		}
+		if(buttons != null) {
+			dialog.buttons = buttons;
+		}
+		dialog.addComponent(contents);
+		dialog.show();
+		if(callback != null) {
+			dialog.registerEvent("dialogClosed",function(e) {
+				callback(e.button);
+			});
+		}
+		return dialog;
+	}
 	static get_assets() {
 		return haxe_ui_ToolkitAssets.get_instance();
 	}
 	static get_screen() {
 		return haxe_ui_core_Screen.get_instance();
+	}
+	static componentFromAsset(assetId) {
+		return haxe_ui_Toolkit.componentFromString(haxe_ui_ToolkitAssets.get_instance().getText(assetId),null,new haxe_ui_parsers_ui_resolvers_AssetResourceResolver(assetId));
+	}
+	static componentFromString(data,type,resourceResolver,callback) {
+		if(data == null || data.length == 0) {
+			return null;
+		}
+		if(type == null) {
+			if(StringTools.startsWith(StringTools.trim(data),"<")) {
+				type = "xml";
+			}
+		}
+		let parser = haxe_ui_parsers_ui_ComponentParser.get(type);
+		if(parser == null) {
+			haxe_Log.trace("WARNING: type \"" + type + "\" not recognised",{ fileName : "haxe/ui/Toolkit.hx", lineNumber : 184, className : "haxe.ui.Toolkit", methodName : "componentFromString"});
+			return null;
+		}
+		let c = parser.parse(data,resourceResolver);
+		let _g = 0;
+		let _g1 = c.styles;
+		while(_g < _g1.length) {
+			let style = _g1[_g];
+			++_g;
+			if(style.scope == "global") {
+				haxe_ui_Toolkit.styleSheet.parse(style.style);
+			}
+		}
+		let component = haxe_ui_Toolkit.buildComponentFromInfo(c,callback);
+		let fullScript = "";
+		let _g2 = 0;
+		let _g3 = c.scriptlets;
+		while(_g2 < _g3.length) fullScript += _g3[_g2++];
+		component.set_script(fullScript);
+		return component;
+	}
+	static buildComponentFromInfo(c,callback) {
+		if(c.condition != null && new haxe_ui_scripting_ConditionEvaluator().evaluate(c.condition) == false) {
+			return null;
+		}
+		let className = haxe_ui_core_ComponentClassMap.get(c.type.toLowerCase());
+		if(className == null) {
+			haxe_Log.trace("WARNING: no class found for component: " + c.type,{ fileName : "haxe/ui/Toolkit.hx", lineNumber : 214, className : "haxe.ui.Toolkit", methodName : "buildComponentFromInfo"});
+			return null;
+		}
+		let component = Type.createInstance($hxClasses[className],[]);
+		if(component == null) {
+			haxe_Log.trace("WARNING: could not create class instance: " + className,{ fileName : "haxe/ui/Toolkit.hx", lineNumber : 220, className : "haxe.ui.Toolkit", methodName : "buildComponentFromInfo"});
+			return null;
+		}
+		if(c.id != null) {
+			component.set_id(c.id);
+		}
+		if(c.left != null) {
+			component.set_left(c.left);
+		}
+		if(c.top != null) {
+			component.set_top(c.top);
+		}
+		if(c.width != null) {
+			component.set_width(c.width);
+		}
+		if(c.height != null) {
+			component.set_height(c.height);
+		}
+		if(c.percentWidth != null) {
+			component.set_percentWidth(c.percentWidth);
+		}
+		if(c.percentHeight != null) {
+			component.set_percentHeight(c.percentHeight);
+		}
+		if(c.text != null) {
+			component.set_text(c.text);
+		}
+		if(c.styleNames != null) {
+			component.set_styleNames(c.styleNames);
+		}
+		if(c.style != null) {
+			component.set_styleString(c.style);
+		}
+		if(c.layout != null) {
+			component.set_layout(haxe_ui_Toolkit.buildLayoutFromInfo(c.layout));
+		}
+		if(((component) instanceof haxe_ui_containers_ScrollView)) {
+			let scrollview = js_Boot.__cast(component , haxe_ui_containers_ScrollView);
+			if(c.contentWidth != null) {
+				scrollview.set_contentWidth(c.contentWidth);
+			}
+			if(c.contentHeight != null) {
+				scrollview.set_contentHeight(c.contentHeight);
+			}
+			if(c.percentContentWidth != null) {
+				scrollview.set_percentContentWidth(c.percentContentWidth);
+			}
+			if(c.percentContentHeight != null) {
+				scrollview.set_percentContentHeight(c.percentContentHeight);
+			}
+		}
+		let propName = haxe_ds_StringMap.keysIterator(c.properties.h);
+		while(propName.hasNext()) {
+			let propName1 = propName.next();
+			let propValue = c.properties.h[propName1];
+			if(Object.prototype.hasOwnProperty.call(haxe_ui_core_ComponentFieldMap.MAP.h,propName1)) {
+				propName1 = haxe_ui_core_ComponentFieldMap.MAP.h[propName1];
+			}
+			if(StringTools.startsWith(propName1,"on")) {
+				component.addScriptEvent(propName1,propValue);
+			} else {
+				propValue = haxe_ui_util_TypeConverter.convert(propValue);
+				Reflect.setProperty(component,propName1,propValue);
+			}
+		}
+		if(js_Boot.__implements(component,haxe_ui_core_IDataComponent) && c.data != null) {
+			(js_Boot.__cast(component , haxe_ui_core_IDataComponent)).set_dataSource(new haxe_ui_data_DataSourceFactory().fromString(c.get_dataString(),haxe_ui_data_ArrayDataSource));
+		}
+		let _g = 0;
+		let _g1 = c.children;
+		while(_g < _g1.length) {
+			let childComponent = haxe_ui_Toolkit.buildComponentFromInfo(_g1[_g++],callback);
+			if(childComponent != null) {
+				component.addComponent(childComponent);
+			}
+		}
+		if(callback != null) {
+			callback(component);
+		}
+		return component;
+	}
+	static buildLayoutFromInfo(l) {
+		let className = haxe_ui_core_LayoutClassMap.get(l.type.toLowerCase());
+		if(className == null) {
+			haxe_Log.trace("WARNING: no class found for layout: " + l.type,{ fileName : "haxe/ui/Toolkit.hx", lineNumber : 279, className : "haxe.ui.Toolkit", methodName : "buildLayoutFromInfo"});
+			return null;
+		}
+		let layout = Type.createInstance($hxClasses[className],[]);
+		if(layout == null) {
+			haxe_Log.trace("WARNING: could not create class instance: " + className,{ fileName : "haxe/ui/Toolkit.hx", lineNumber : 285, className : "haxe.ui.Toolkit", methodName : "buildLayoutFromInfo"});
+			return null;
+		}
+		let propName = haxe_ds_StringMap.keysIterator(l.properties.h);
+		while(propName.hasNext()) {
+			let propName1 = propName.next();
+			Reflect.setProperty(layout,propName1,haxe_ui_util_Variant.fromDynamic(l.properties.h[propName1]));
+		}
+		return layout;
+	}
+	static set_pixelsPerRem(value) {
+		if(haxe_ui_Toolkit.pixelsPerRem == value) {
+			return value;
+		}
+		haxe_ui_Toolkit.pixelsPerRem = value;
+		haxe_ui_core_Screen.get_instance().refreshStyleRootComponents();
+		return value;
 	}
 	static get_autoScaleDPIThreshold() {
 		if(haxe_ui_core_Screen.get_instance().get_isRetina() == true) {
@@ -5750,6 +7045,14 @@ class haxe_ui_Toolkit {
 		}
 		return haxe_ui_Toolkit._scaleX;
 	}
+	static set_scaleX(value) {
+		if(haxe_ui_Toolkit._scaleX == value) {
+			return value;
+		}
+		haxe_ui_Toolkit._scaleX = value;
+		haxe_ui_Toolkit.autoScale = false;
+		return value;
+	}
 	static get_scaleY() {
 		if(haxe_ui_Toolkit._scaleY == 0) {
 			if(haxe_ui_Toolkit.autoScale == true) {
@@ -5765,8 +7068,21 @@ class haxe_ui_Toolkit {
 		}
 		return haxe_ui_Toolkit._scaleY;
 	}
+	static set_scaleY(value) {
+		if(haxe_ui_Toolkit._scaleY == value) {
+			return value;
+		}
+		haxe_ui_Toolkit._scaleY = value;
+		haxe_ui_Toolkit.autoScale = false;
+		return value;
+	}
 	static get_scale() {
 		return Math.max(haxe_ui_Toolkit.get_scaleX(),haxe_ui_Toolkit.get_scaleY());
+	}
+	static set_scale(value) {
+		haxe_ui_Toolkit.set_scaleX(value);
+		haxe_ui_Toolkit.set_scaleY(value);
+		return value;
 	}
 	static callLater(fn) {
 		new haxe_ui_CallLater(fn);
@@ -5774,7 +7090,7 @@ class haxe_ui_Toolkit {
 }
 $hxClasses["haxe.ui.Toolkit"] = haxe_ui_Toolkit;
 haxe_ui_Toolkit.__name__ = "haxe.ui.Toolkit";
-haxe_ui_Toolkit.__properties__ = {get_scale: "get_scale",get_scaleY: "get_scaleY",get_scaleX: "get_scaleX",get_autoScaleDPIThreshold: "get_autoScaleDPIThreshold",get_screen: "get_screen",get_assets: "get_assets",get_backendProperties: "get_backendProperties"};
+haxe_ui_Toolkit.__properties__ = {set_scale: "set_scale",get_scale: "get_scale",set_scaleY: "set_scaleY",get_scaleY: "get_scaleY",set_scaleX: "set_scaleX",get_scaleX: "get_scaleX",get_autoScaleDPIThreshold: "get_autoScaleDPIThreshold",set_pixelsPerRem: "set_pixelsPerRem",get_screen: "get_screen",get_assets: "get_assets",get_backendProperties: "get_backendProperties",set_theme: "set_theme",get_theme: "get_theme"};
 class haxe_ui_backend_AssetsBase {
 	constructor() {
 		if(haxe_ui_backend_AssetsBase._hx_skip_constructor) {
@@ -5786,6 +7102,21 @@ class haxe_ui_backend_AssetsBase {
 	}
 	getTextDelegate(resourceId) {
 		return null;
+	}
+	getImageInternal(resourceId,callback) {
+		callback(null);
+	}
+	getImageFromHaxeResource(resourceId,callback) {
+		callback(resourceId,null);
+	}
+	imageFromBytes(bytes,callback) {
+		callback(null);
+	}
+	getFontInternal(resourceId,callback) {
+		callback(null);
+	}
+	getFontFromHaxeResource(resourceId,callback) {
+		callback(resourceId,null);
 	}
 	imageInfoFromImageData(imageData) {
 		return { data : imageData, width : 0, height : 0};
@@ -5886,6 +7217,7 @@ class haxe_ui_ToolkitAssets extends haxe_ui_backend_AssetsImpl {
 	}
 	_hx_constructor() {
 		this.options = null;
+		this.preloadList = [];
 		super._hx_constructor();
 	}
 	getFont(resourceId,callback,useCache) {
@@ -5970,6 +7302,15 @@ class haxe_ui_ToolkitAssets extends haxe_ui_backend_AssetsImpl {
 		}
 		return s;
 	}
+	getBytes(resourceId) {
+		return null;
+	}
+	addPlugin(plugin) {
+		if(this._plugins == null) {
+			this._plugins = [];
+		}
+		this._plugins.push(plugin);
+	}
 	runPlugins(asset) {
 		if(this._plugins == null) {
 			return asset;
@@ -5992,6 +7333,7 @@ haxe_ui_ToolkitAssets.__properties__ = {get_instance: "get_instance"};
 haxe_ui_ToolkitAssets.__super__ = haxe_ui_backend_AssetsImpl;
 Object.assign(haxe_ui_ToolkitAssets.prototype, {
 	__class__: haxe_ui_ToolkitAssets
+	,preloadList: null
 	,options: null
 	,_fontCache: null
 	,_fontCallbacks: null
@@ -6005,11 +7347,28 @@ class haxe_ui_assets_AssetPlugin {
 	invoke(asset) {
 		return asset;
 	}
+	setProperty(name,value) {
+		if(this._props == null) {
+			this._props = new haxe_ds_StringMap();
+		}
+		this._props.h[name] = value;
+	}
+	getProperty(name,defaultValue) {
+		if(this._props == null) {
+			return defaultValue;
+		}
+		let v = this._props.h[name];
+		if(v == null) {
+			v = defaultValue;
+		}
+		return v;
+	}
 }
 $hxClasses["haxe.ui.assets.AssetPlugin"] = haxe_ui_assets_AssetPlugin;
 haxe_ui_assets_AssetPlugin.__name__ = "haxe.ui.assets.AssetPlugin";
 Object.assign(haxe_ui_assets_AssetPlugin.prototype, {
 	__class__: haxe_ui_assets_AssetPlugin
+	,_props: null
 });
 class haxe_ui_containers_Box extends haxe_ui_core_Component {
 	_hx_constructor() {
@@ -6091,6 +7450,7 @@ class haxe_ui_backend_DialogBase extends haxe_ui_containers_Box {
 		this._dialogParent = null;
 		this.button = null;
 		this.centerDialog = true;
+		this.draggable = false;
 		this.buttons = null;
 		this.modal = true;
 		super._hx_constructor();
@@ -6132,6 +7492,17 @@ class haxe_ui_backend_DialogBase extends haxe_ui_containers_Box {
 	}
 	get_dialogParent() {
 		return this._dialogParent;
+	}
+	set_dialogParent(value) {
+		this._dialogParent = value;
+		return value;
+	}
+	showDialog(modal) {
+		if(modal == null) {
+			modal = true;
+		}
+		this.modal = modal;
+		this.show();
 	}
 	show() {
 		let dp = this.get_dialogParent();
@@ -6179,6 +7550,17 @@ class haxe_ui_backend_DialogBase extends haxe_ui_containers_Box {
 			}
 			this._buttonsCreated = true;
 		}
+	}
+	get_closable() {
+		return !this.dialogCloseButton.get_hidden();
+	}
+	set_closable(value) {
+		if(value == true) {
+			this.dialogCloseButton.show();
+		} else {
+			this.dialogCloseButton.hide();
+		}
+		return value;
 	}
 	validateDialog(button,fn) {
 		fn(true);
@@ -6271,6 +7653,7 @@ Object.assign(haxe_ui_backend_DialogBase.prototype, {
 	__class__: haxe_ui_backend_DialogBase
 	,modal: null
 	,buttons: null
+	,draggable: null
 	,centerDialog: null
 	,button: null
 	,_overlay: null
@@ -6283,12 +7666,19 @@ Object.assign(haxe_ui_backend_DialogBase.prototype, {
 	,dialogFooter: null
 	,_dialogParent: null
 	,_buttonsCreated: null
-	,__properties__: Object.assign({}, haxe_ui_containers_Box.prototype.__properties__, {set_title: "set_title",get_title: "get_title",get_dialogParent: "get_dialogParent"})
+	,__properties__: Object.assign({}, haxe_ui_containers_Box.prototype.__properties__, {set_title: "set_title",get_title: "get_title",set_closable: "set_closable",get_closable: "get_closable",set_dialogParent: "set_dialogParent",get_dialogParent: "get_dialogParent"})
 });
 class haxe_ui_backend_EventBase {
+	cancel() {
+	}
+	postClone(event) {
+	}
 }
 $hxClasses["haxe.ui.backend.EventBase"] = haxe_ui_backend_EventBase;
 haxe_ui_backend_EventBase.__name__ = "haxe.ui.backend.EventBase";
+Object.assign(haxe_ui_backend_EventBase.prototype, {
+	__class__: haxe_ui_backend_EventBase
+});
 class haxe_ui_backend_EventImpl extends haxe_ui_backend_EventBase {
 	cancel() {
 		if(this._originalEvent != null) {
@@ -6339,7 +7729,16 @@ class haxe_ui_backend_ImageBase extends haxe_ui_backend_ImageSurface {
 		this._imageWidth = 0;
 		this._top = 0;
 		this._left = 0;
+		this.aspectRatio = 1;
 		super._hx_constructor();
+	}
+	dispose() {
+	}
+	validateData() {
+	}
+	validatePosition() {
+	}
+	validateDisplay() {
 	}
 }
 $hxClasses["haxe.ui.backend.ImageBase"] = haxe_ui_backend_ImageBase;
@@ -6348,6 +7747,7 @@ haxe_ui_backend_ImageBase.__super__ = haxe_ui_backend_ImageSurface;
 Object.assign(haxe_ui_backend_ImageBase.prototype, {
 	__class__: haxe_ui_backend_ImageBase
 	,parentComponent: null
+	,aspectRatio: null
 	,_left: null
 	,_top: null
 	,_imageWidth: null
@@ -6403,6 +7803,15 @@ class haxe_ui_containers_dialogs_Dialog extends haxe_ui_backend_DialogBase {
 	_hx_constructor() {
 		super._hx_constructor();
 	}
+	set_onDialogClosed(value) {
+		if(this.__onDialogClosed != null) {
+			this.unregisterEvent("dialogClosed",this.__onClick);
+			this.__onDialogClosed = null;
+		}
+		this.registerEvent("dialogClosed",value);
+		this.__onDialogClosed = value;
+		return value;
+	}
 	registerBehaviours() {
 		super.registerBehaviours();
 	}
@@ -6424,6 +7833,9 @@ haxe_ui_containers_dialogs_Dialog.__name__ = "haxe.ui.containers.dialogs.Dialog"
 haxe_ui_containers_dialogs_Dialog.__super__ = haxe_ui_backend_DialogBase;
 Object.assign(haxe_ui_containers_dialogs_Dialog.prototype, {
 	__class__: haxe_ui_containers_dialogs_Dialog
+	,__onDialogClosed: null
+	,onDialogClosed: null
+	,__properties__: Object.assign({}, haxe_ui_backend_DialogBase.prototype.__properties__, {set_onDialogClosed: "set_onDialogClosed"})
 });
 class haxe_ui_backend_MessageBoxBase extends haxe_ui_containers_dialogs_Dialog {
 	constructor() {
@@ -6447,8 +7859,21 @@ class haxe_ui_backend_MessageBoxBase extends haxe_ui_containers_dialogs_Dialog {
 		this.messageLabel.set_percentWidth(100);
 		hbox.addComponent(this.messageLabel);
 	}
+	get_message() {
+		return this.messageLabel.get_text();
+	}
+	set_message(value) {
+		this.messageLabel.set_text(value);
+		return value;
+	}
 	get_type() {
 		return this._type;
+	}
+	set_type(value) {
+		this._type = haxe_ui_containers_dialogs_MessageBoxType.toString(value);
+		this.iconImage.addClass(this._type);
+		this.addClass(this._type);
+		return value;
 	}
 	registerBehaviours() {
 		super.registerBehaviours();
@@ -6474,7 +7899,7 @@ Object.assign(haxe_ui_backend_MessageBoxBase.prototype, {
 	,iconImage: null
 	,messageLabel: null
 	,_type: null
-	,__properties__: Object.assign({}, haxe_ui_containers_dialogs_Dialog.prototype.__properties__, {get_type: "get_type"})
+	,__properties__: Object.assign({}, haxe_ui_containers_dialogs_Dialog.prototype.__properties__, {set_type: "set_type",get_type: "get_type",set_message: "set_message",get_message: "get_message"})
 });
 class haxe_ui_backend_PlatformBase {
 	constructor() {
@@ -6540,6 +7965,9 @@ class haxe_ui_backend_ScreenBase {
 		this._focus = null;
 		this._topLevelComponents = [];
 	}
+	get_focus() {
+		return this._focus;
+	}
 	set_focus(value) {
 		this._focus = value;
 		return this._focus;
@@ -6551,11 +7979,31 @@ class haxe_ui_backend_ScreenBase {
 		this._options = value;
 		return value;
 	}
+	get_dpi() {
+		return 72;
+	}
+	get_title() {
+		return null;
+	}
+	set_title(s) {
+		return s;
+	}
 	get_width() {
 		return 0;
 	}
 	get_height() {
 		return 0;
+	}
+	get_isRetina() {
+		return false;
+	}
+	addComponent(component) {
+		return component;
+	}
+	removeComponent(component) {
+		return component;
+	}
+	handleSetComponentIndex(child,index) {
 	}
 	resizeComponent(c) {
 		if(c.get_percentWidth() > 0) {
@@ -6565,6 +8013,13 @@ class haxe_ui_backend_ScreenBase {
 			c.set_height(this.get_height() * c.get_percentHeight() / 100);
 		}
 	}
+	supportsEvent(type) {
+		return false;
+	}
+	mapEvent(type,listener) {
+	}
+	unmapEvent(type,listener) {
+	}
 }
 $hxClasses["haxe.ui.backend.ScreenBase"] = haxe_ui_backend_ScreenBase;
 haxe_ui_backend_ScreenBase.__name__ = "haxe.ui.backend.ScreenBase";
@@ -6573,9 +8028,11 @@ Object.assign(haxe_ui_backend_ScreenBase.prototype, {
 	,_topLevelComponents: null
 	,_focus: null
 	,_options: null
+	,dpi: null
 	,width: null
 	,height: null
-	,__properties__: {get_height: "get_height",get_width: "get_width",set_options: "set_options",get_options: "get_options",set_focus: "set_focus"}
+	,isRetina: null
+	,__properties__: {get_isRetina: "get_isRetina",get_height: "get_height",get_width: "get_width",set_title: "set_title",get_title: "get_title",get_dpi: "get_dpi",set_options: "set_options",get_options: "get_options",set_focus: "set_focus",get_focus: "get_focus"}
 });
 class haxe_ui_backend_ScreenImpl extends haxe_ui_backend_ScreenBase {
 	constructor() {
@@ -6606,6 +8063,13 @@ class haxe_ui_backend_ScreenImpl extends haxe_ui_backend_ScreenBase {
 	}
 	get_dpi() {
 		return haxe_ui_backend_html5_HtmlUtils.get_dpi();
+	}
+	get_title() {
+		return window.document.title;
+	}
+	set_title(s) {
+		window.document.title = s;
+		return s;
 	}
 	get_width() {
 		let cx = this.get_container().offsetWidth;
@@ -6689,6 +8153,13 @@ class haxe_ui_backend_ScreenImpl extends haxe_ui_backend_ScreenBase {
 			this.get_container().removeChild(component.element);
 		}
 		return component;
+	}
+	handleSetComponentIndex(child,index) {
+		if(index == (js_Boot.__cast(this , haxe_ui_core_Screen)).rootComponents.length - 1) {
+			this.get_container().appendChild(child.element);
+		} else {
+			haxe_ui_backend_html5_HtmlUtils.insertBefore((js_Boot.__cast(this , haxe_ui_core_Screen)).rootComponents[index + 1].element,child.element);
+		}
 	}
 	get_container() {
 		let c = null;
@@ -6867,9 +8338,27 @@ class haxe_ui_backend_TextBase {
 		this._inputData = new haxe_ui_core_TextInputData();
 		this._displayData = new haxe_ui_core_TextDisplayData();
 	}
+	focus() {
+	}
+	blur() {
+	}
+	get_dataSource() {
+		return this._dataSource;
+	}
 	set_dataSource(value) {
 		this._dataSource = value;
 		return value;
+	}
+	validateData() {
+	}
+	validateStyle() {
+		return false;
+	}
+	validatePosition() {
+	}
+	validateDisplay() {
+	}
+	measureText() {
 	}
 }
 $hxClasses["haxe.ui.backend.TextBase"] = haxe_ui_backend_TextBase;
@@ -6890,7 +8379,7 @@ Object.assign(haxe_ui_backend_TextBase.prototype, {
 	,_textStyle: null
 	,_fontInfo: null
 	,_dataSource: null
-	,__properties__: {set_dataSource: "set_dataSource"}
+	,__properties__: {set_dataSource: "set_dataSource",get_dataSource: "get_dataSource"}
 });
 class haxe_ui_backend_TextDisplayImpl extends haxe_ui_backend_TextBase {
 	constructor() {
@@ -7278,10 +8767,19 @@ class haxe_ui_validation_ValidationManager {
 		}
 		this._events.add(type,listener);
 	}
+	unregisterEvent(type,listener) {
+		if(this._events == null) {
+			this._events.remove(type,listener);
+		}
+	}
 	dispatch(event) {
 		if(this._events != null) {
 			this._events.invoke(event.type,event);
 		}
+	}
+	dispose() {
+		this.isValidating = false;
+		this._queue.splice(0,this._queue.length);
 	}
 	add(object) {
 		if(this._queue.indexOf(object) != -1) {
@@ -7386,6 +8884,9 @@ Object.assign(haxe_ui_validation_ValidationManager.prototype, {
 	,_events: null
 });
 class haxe_ui_backend_html5_HtmlUtils {
+	static px(value) {
+		return "" + value + "px";
+	}
 	static color(value) {
 		return "#" + StringTools.hex(value,6);
 	}
@@ -7731,11 +9232,23 @@ class haxe_ui_backend_html5_UserAgent {
 			this._unknown = true;
 		}
 	}
+	get_opera() {
+		return this._opera;
+	}
 	get_chrome() {
 		return this._chrome;
 	}
+	get_safari() {
+		return this._safari;
+	}
 	get_firefox() {
 		return this._firefox;
+	}
+	get_msie() {
+		return this._msie;
+	}
+	get_unknown() {
+		return this._unknown;
 	}
 	static get_instance() {
 		if(haxe_ui_backend_html5_UserAgent._instance == null) {
@@ -7750,14 +9263,18 @@ haxe_ui_backend_html5_UserAgent.__properties__ = {get_instance: "get_instance"};
 Object.assign(haxe_ui_backend_html5_UserAgent.prototype, {
 	__class__: haxe_ui_backend_html5_UserAgent
 	,_opera: null
+	,opera: null
 	,_chrome: null
 	,chrome: null
 	,_safari: null
+	,safari: null
 	,_firefox: null
 	,firefox: null
 	,_msie: null
+	,msie: null
 	,_unknown: null
-	,__properties__: {get_firefox: "get_firefox",get_chrome: "get_chrome"}
+	,unknown: null
+	,__properties__: {get_unknown: "get_unknown",get_msie: "get_msie",get_firefox: "get_firefox",get_safari: "get_safari",get_chrome: "get_chrome",get_opera: "get_opera"}
 });
 class haxe_ui_backend_html5_native_NativeElement {
 	constructor(component) {
@@ -8413,6 +9930,66 @@ Object.assign(haxe_ui_core_CompositeBuilder.prototype, {
 	,_component: null
 	,__properties__: {get_cssName: "get_cssName",get_numComponents: "get_numComponents"}
 });
+class haxe_ui_backend_html5_native_builders_ScrollViewBuilder extends haxe_ui_core_CompositeBuilder {
+	constructor(component) {
+		super(component);
+	}
+	create() {
+		this.createContentContainer("vertical");
+	}
+	addComponent(child) {
+		if(child.hasClass("scrollview-contents") == false) {
+			return this._contents.addComponent(child);
+		}
+		return null;
+	}
+	addComponentAt(child,index) {
+		if(child.hasClass("scrollview-contents") == false) {
+			return this._contents.addComponentAt(child,index);
+		}
+		return null;
+	}
+	removeComponent(child,dispose,invalidate) {
+		if(invalidate == null) {
+			invalidate = true;
+		}
+		if(dispose == null) {
+			dispose = true;
+		}
+		if(child.hasClass("scrollview-contents") == false) {
+			return this._contents.removeComponent(child,dispose,invalidate);
+		}
+		return null;
+	}
+	getComponentIndex(child) {
+		return this._contents.getComponentIndex(child);
+	}
+	setComponentIndex(child,index) {
+		if(child.hasClass("scrollview-contents") == false) {
+			return this._contents.setComponentIndex(child,index);
+		}
+		return null;
+	}
+	getComponentAt(index) {
+		return this._contents.getComponentAt(index);
+	}
+	createContentContainer(layoutName) {
+		if(this._contents == null) {
+			this._contents = new haxe_ui_containers_Box();
+			this._contents.addClass("scrollview-contents");
+			this._contents.set_id("scrollview-contents");
+			this._contents.set_layout(haxe_ui_layouts_LayoutFactory.createFromName(layoutName));
+			this._component.addComponent(this._contents);
+		}
+	}
+}
+$hxClasses["haxe.ui.backend.html5.native.builders.ScrollViewBuilder"] = haxe_ui_backend_html5_native_builders_ScrollViewBuilder;
+haxe_ui_backend_html5_native_builders_ScrollViewBuilder.__name__ = "haxe.ui.backend.html5.native.builders.ScrollViewBuilder";
+haxe_ui_backend_html5_native_builders_ScrollViewBuilder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_backend_html5_native_builders_ScrollViewBuilder.prototype, {
+	__class__: haxe_ui_backend_html5_native_builders_ScrollViewBuilder
+	,_contents: null
+});
 class haxe_ui_layouts_ILayout {
 }
 $hxClasses["haxe.ui.layouts.ILayout"] = haxe_ui_layouts_ILayout;
@@ -8612,6 +10189,12 @@ class haxe_ui_layouts_Layout {
 	}
 	get_usableHeight() {
 		return this.get_usableSize().height;
+	}
+	calcAutoWidth() {
+		return this.calcAutoSize().width;
+	}
+	calcAutoHeight() {
+		return this.calcAutoSize().height;
 	}
 	calcAutoSize(exclusions) {
 		let x1 = 16777215;
@@ -9111,6 +10694,8 @@ Object.assign(haxe_ui_backend_html5_native_size_TextSize.prototype, {
 	__class__: haxe_ui_backend_html5_native_size_TextSize
 });
 class haxe_ui_backend_html5_util_FontDetect {
+	constructor() {
+	}
 	static init() {
 		if(haxe_ui_backend_html5_util_FontDetect._initialized == true) {
 			return;
@@ -9195,6 +10780,9 @@ class haxe_ui_backend_html5_util_FontDetect {
 }
 $hxClasses["haxe.ui.backend.html5.util.FontDetect"] = haxe_ui_backend_html5_util_FontDetect;
 haxe_ui_backend_html5_util_FontDetect.__name__ = "haxe.ui.backend.html5.util.FontDetect";
+Object.assign(haxe_ui_backend_html5_util_FontDetect.prototype, {
+	__class__: haxe_ui_backend_html5_util_FontDetect
+});
 class haxe_ui_behaviours_Behaviours {
 	constructor(component) {
 		this._actualUpdateOrder = null;
@@ -9208,6 +10796,9 @@ class haxe_ui_behaviours_Behaviours {
 		HxOverrides.remove(this._updateOrder,id);
 		this._updateOrder.push(id);
 		this._actualUpdateOrder = null;
+	}
+	isRegistered(id) {
+		return Object.prototype.hasOwnProperty.call(this._registry.h,id);
 	}
 	replaceNative() {
 		if(this._component.get_native() == false || this._component.get_hasNativeEntry() == false) {
@@ -9238,6 +10829,9 @@ class haxe_ui_behaviours_Behaviours {
 				(js_Boot.__cast(b , haxe_ui_behaviours_DataBehaviour)).validate();
 			}
 		}
+	}
+	get_updateOrder() {
+		return this._updateOrder;
 	}
 	set_updateOrder(value) {
 		this._updateOrder = value;
@@ -9414,7 +11008,7 @@ Object.assign(haxe_ui_behaviours_Behaviours.prototype, {
 	,_actualUpdateOrder: null
 	,actualUpdateOrder: null
 	,_cache: null
-	,__properties__: {get_actualUpdateOrder: "get_actualUpdateOrder",set_updateOrder: "set_updateOrder"}
+	,__properties__: {get_actualUpdateOrder: "get_actualUpdateOrder",set_updateOrder: "set_updateOrder",get_updateOrder: "get_updateOrder"}
 });
 class haxe_ui_behaviours_DefaultBehaviour extends haxe_ui_behaviours_Behaviour {
 	constructor(component) {
@@ -9487,6 +11081,16 @@ class haxe_ui_binding_PropertyInfo {
 	constructor() {
 		this.objects = new haxe_ds_StringMap();
 	}
+	addObject(objectId,objectProp) {
+		let array = this.objects.h[objectId];
+		if(array == null) {
+			array = [];
+			this.objects.h[objectId] = array;
+		}
+		if(array.indexOf(objectProp) == -1) {
+			array.push(objectProp);
+		}
+	}
 }
 $hxClasses["haxe.ui.binding.PropertyInfo"] = haxe_ui_binding_PropertyInfo;
 haxe_ui_binding_PropertyInfo.__name__ = "haxe.ui.binding.PropertyInfo";
@@ -9500,6 +11104,19 @@ class haxe_ui_binding_TargetInfo {
 	constructor() {
 		this.props = new haxe_ds_StringMap();
 	}
+	addBinding(sourceProp,target,targetProp) {
+		let map = this.props.h[sourceProp];
+		if(map == null) {
+			map = new haxe_ds_ObjectMap();
+			this.props.h[sourceProp] = map;
+		}
+		let array = map.h[target.__id__];
+		if(array == null) {
+			array = [];
+			map.set(target,array);
+		}
+		array.push(targetProp);
+	}
 }
 $hxClasses["haxe.ui.binding.TargetInfo"] = haxe_ui_binding_TargetInfo;
 haxe_ui_binding_TargetInfo.__name__ = "haxe.ui.binding.TargetInfo";
@@ -9507,9 +11124,62 @@ Object.assign(haxe_ui_binding_TargetInfo.prototype, {
 	__class__: haxe_ui_binding_TargetInfo
 	,props: null
 });
+class haxe_ui_binding_BindingInfo {
+	constructor() {
+		this.props = new haxe_ds_StringMap();
+	}
+	addProp(name,script) {
+		let p = this.props.h[name];
+		if(p == null) {
+			p = new haxe_ui_binding_PropertyInfo();
+			p.name = name;
+			p.script = script;
+			this.props.h[name] = p;
+		}
+		return p;
+	}
+}
+$hxClasses["haxe.ui.binding.BindingInfo"] = haxe_ui_binding_BindingInfo;
+haxe_ui_binding_BindingInfo.__name__ = "haxe.ui.binding.BindingInfo";
+Object.assign(haxe_ui_binding_BindingInfo.prototype, {
+	__class__: haxe_ui_binding_BindingInfo
+	,props: null
+});
 class haxe_ui_binding_BindingManager {
 	constructor() {
 		this.interp = new haxe_ui_scripting_ScriptInterp();
+	}
+	add(c,prop,script) {
+		let n1 = script.indexOf("${");
+		while(n1 != -1) {
+			let n2 = script.indexOf("}",n1);
+			let scriptPart = HxOverrides.substr(script,n1 + 2,n2 - n1 - 2);
+			let expr = new hscript_Parser().parseString(scriptPart);
+			let info = haxe_ui_binding_BindingManager.bindingInfo.h[c.__id__];
+			if(info == null) {
+				info = new haxe_ui_binding_BindingInfo();
+				haxe_ui_binding_BindingManager.bindingInfo.set(c,info);
+			}
+			let propInfo = info.addProp(prop,script);
+			this.extractFields(expr,propInfo);
+			let objectId = haxe_ds_StringMap.keysIterator(propInfo.objects.h);
+			while(objectId.hasNext()) {
+				let objectId1 = objectId.next();
+				let _g = 0;
+				let _g1 = propInfo.objects.h[objectId1];
+				while(_g < _g1.length) {
+					let fieldId = _g1[_g++];
+					let targetInfo = haxe_ui_binding_BindingManager.targets.h[objectId1];
+					if(targetInfo == null) {
+						targetInfo = new haxe_ui_binding_TargetInfo();
+						haxe_ui_binding_BindingManager.targets.h[objectId1] = targetInfo;
+					}
+					targetInfo.addBinding(fieldId,c,propInfo);
+				}
+			}
+			this.handleProp(c,propInfo);
+			n1 = script.indexOf("${",n2);
+		}
 	}
 	componentPropChanged(c,prop) {
 		if(c == null || c.get_id() == null) {
@@ -9586,6 +11256,53 @@ class haxe_ui_binding_BindingManager {
 			ref = ref.parentComponent;
 		}
 		return root;
+	}
+	extractFields(expr,propInfo) {
+		switch(expr._hx_index) {
+		case 0:
+			break;
+		case 1:
+			propInfo.addObject(expr.v,"value");
+			break;
+		case 5:
+			let _g = expr.f;
+			let _g1 = expr.e;
+			switch(_g1._hx_index) {
+			case 1:
+				propInfo.addObject(_g1.v,_g);
+				break;
+			case 5:
+				let _g2 = _g1.e;
+				if(_g2._hx_index == 1) {
+					propInfo.addObject(_g2.v,_g1.f);
+				} else {
+					haxe_Log.trace(expr,{ fileName : "haxe/ui/binding/BindingManager.hx", lineNumber : 232, className : "haxe.ui.binding.BindingManager", methodName : "extractFields"});
+				}
+				break;
+			default:
+				haxe_Log.trace(expr,{ fileName : "haxe/ui/binding/BindingManager.hx", lineNumber : 232, className : "haxe.ui.binding.BindingManager", methodName : "extractFields"});
+			}
+			break;
+		case 6:
+			this.extractFields(expr.e1,propInfo);
+			this.extractFields(expr.e2,propInfo);
+			break;
+		case 7:
+			this.extractFields(expr.e,propInfo);
+			break;
+		case 8:
+			let _g3 = expr.params;
+			let _g4 = 0;
+			while(_g4 < _g3.length) this.extractFields(_g3[_g4++],propInfo);
+			break;
+		case 17:
+			let _g5 = expr.e;
+			let _g6 = 0;
+			while(_g6 < _g5.length) this.extractFields(_g5[_g6++],propInfo);
+			break;
+		default:
+			haxe_Log.trace(expr,{ fileName : "haxe/ui/binding/BindingManager.hx", lineNumber : 232, className : "haxe.ui.binding.BindingManager", methodName : "extractFields"});
+		}
 	}
 	static get_instance() {
 		if(haxe_ui_binding_BindingManager._instance == null) {
@@ -9796,6 +11513,15 @@ class haxe_ui_components_Button extends haxe_ui_core_InteractiveComponent {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"text");
 		return value;
 	}
+	get_iconPosition() {
+		if(this.customStyle.iconPosition != null) {
+			return this.customStyle.iconPosition;
+		}
+		if(this.get_style() == null || this.get_style().iconPosition == null) {
+			return null;
+		}
+		return this.get_style().iconPosition;
+	}
 	set_iconPosition(value) {
 		if(this.customStyle.iconPosition == value) {
 			return value;
@@ -9810,6 +11536,29 @@ class haxe_ui_components_Button extends haxe_ui_core_InteractiveComponent {
 		}
 		return value;
 	}
+	get_fontSize() {
+		if(this.customStyle.fontSize != null) {
+			return this.customStyle.fontSize;
+		}
+		if(this.get_style() == null || this.get_style().fontSize == null) {
+			return null;
+		}
+		return this.get_style().fontSize;
+	}
+	set_fontSize(value) {
+		if(this.customStyle.fontSize == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.fontSize = value;
+		this.invalidateComponent("style");
+		if(!(this._layout == null || this._layoutLocked == true)) {
+			this.invalidateComponent("layout");
+		}
+		return value;
+	}
 	get_textAlign() {
 		if(this.customStyle.textAlign != null) {
 			return this.customStyle.textAlign;
@@ -9818,6 +11567,20 @@ class haxe_ui_components_Button extends haxe_ui_core_InteractiveComponent {
 			return null;
 		}
 		return this.get_style().textAlign;
+	}
+	set_textAlign(value) {
+		if(this.customStyle.textAlign == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.textAlign = value;
+		this.invalidateComponent("style");
+		if(!(this._layout == null || this._layoutLocked == true)) {
+			this.invalidateComponent("layout");
+		}
+		return value;
 	}
 	cloneComponent() {
 		let c = super.cloneComponent();
@@ -9852,7 +11615,7 @@ haxe_ui_components_Button.__name__ = "haxe.ui.components.Button";
 haxe_ui_components_Button.__super__ = haxe_ui_core_InteractiveComponent;
 Object.assign(haxe_ui_components_Button.prototype, {
 	__class__: haxe_ui_components_Button
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_textAlign: "get_textAlign",set_iconPosition: "set_iconPosition",set_icon: "set_icon",get_icon: "get_icon",set_selected: "set_selected",get_selected: "get_selected",set_toggle: "set_toggle",get_toggle: "get_toggle",set_remainPressed: "set_remainPressed",get_remainPressed: "get_remainPressed",set_easeInRepeater: "set_easeInRepeater",get_easeInRepeater: "get_easeInRepeater",set_repeatInterval: "set_repeatInterval",get_repeatInterval: "get_repeatInterval",set_repeater: "set_repeater",get_repeater: "get_repeater"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_textAlign: "set_textAlign",get_textAlign: "get_textAlign",set_fontSize: "set_fontSize",get_fontSize: "get_fontSize",set_iconPosition: "set_iconPosition",get_iconPosition: "get_iconPosition",set_icon: "set_icon",get_icon: "get_icon",set_selected: "set_selected",get_selected: "get_selected",set_toggle: "set_toggle",get_toggle: "get_toggle",set_remainPressed: "set_remainPressed",get_remainPressed: "get_remainPressed",set_easeInRepeater: "set_easeInRepeater",get_easeInRepeater: "get_easeInRepeater",set_repeatInterval: "set_repeatInterval",get_repeatInterval: "get_repeatInterval",set_repeater: "set_repeater",get_repeater: "get_repeater"})
 });
 class haxe_ui_components_ButtonLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -11597,6 +13360,44 @@ haxe_ui_components__$CheckBox_CheckBoxLayout.__super__ = haxe_ui_layouts_Horizon
 Object.assign(haxe_ui_components__$CheckBox_CheckBoxLayout.prototype, {
 	__class__: haxe_ui_components__$CheckBox_CheckBoxLayout
 });
+class haxe_ui_components_Column extends haxe_ui_components_Button {
+	constructor() {
+		super();
+	}
+	get_sortable() {
+		return this.hasClass("sortable");
+	}
+	set_sortable(value) {
+		if(value == true) {
+			this.addClass("sortable");
+		} else {
+			this.removeClass("sortable");
+		}
+		return value;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_Column();
+	}
+}
+$hxClasses["haxe.ui.components.Column"] = haxe_ui_components_Column;
+haxe_ui_components_Column.__name__ = "haxe.ui.components.Column";
+haxe_ui_components_Column.__super__ = haxe_ui_components_Button;
+Object.assign(haxe_ui_components_Column.prototype, {
+	__class__: haxe_ui_components_Column
+	,__properties__: Object.assign({}, haxe_ui_components_Button.prototype.__properties__, {set_sortable: "set_sortable",get_sortable: "get_sortable"})
+});
 class haxe_ui_core_IDataComponent {
 }
 $hxClasses["haxe.ui.core.IDataComponent"] = haxe_ui_core_IDataComponent;
@@ -11605,11 +13406,15 @@ haxe_ui_core_IDataComponent.__isInterface__ = true;
 Object.assign(haxe_ui_core_IDataComponent.prototype, {
 	__class__: haxe_ui_core_IDataComponent
 	,get_dataSource: null
-	,__properties__: {get_dataSource: "get_dataSource"}
+	,set_dataSource: null
+	,__properties__: {set_dataSource: "set_dataSource",get_dataSource: "get_dataSource"}
 });
 class haxe_ui_components_DropDown extends haxe_ui_components_Button {
 	constructor() {
 		super();
+	}
+	hideDropDown() {
+		this.behaviours.call("hideDropDown",null);
 	}
 	registerComposite() {
 		super.registerComposite();
@@ -11656,14 +13461,34 @@ class haxe_ui_components_DropDown extends haxe_ui_components_Button {
 	get_virtual() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("virtual"));
 	}
+	set_virtual(value) {
+		this.behaviours.set("virtual",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"virtual");
+		return value;
+	}
 	get_dropdownWidth() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("dropdownWidth"));
+	}
+	set_dropdownWidth(value) {
+		this.behaviours.set("dropdownWidth",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dropdownWidth");
+		return value;
 	}
 	get_dropdownHeight() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("dropdownHeight"));
 	}
+	set_dropdownHeight(value) {
+		this.behaviours.set("dropdownHeight",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dropdownHeight");
+		return value;
+	}
 	get_dropdownSize() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("dropdownSize"));
+	}
+	set_dropdownSize(value) {
+		this.behaviours.set("dropdownSize",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dropdownSize");
+		return value;
 	}
 	get_selectedIndex() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("selectedIndex"));
@@ -11709,7 +13534,7 @@ haxe_ui_components_DropDown.__interfaces__ = [haxe_ui_core_IDataComponent];
 haxe_ui_components_DropDown.__super__ = haxe_ui_components_Button;
 Object.assign(haxe_ui_components_DropDown.prototype, {
 	__class__: haxe_ui_components_DropDown
-	,__properties__: Object.assign({}, haxe_ui_components_Button.prototype.__properties__, {set_selectedItem: "set_selectedItem",get_selectedItem: "get_selectedItem",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",get_dropdownSize: "get_dropdownSize",get_dropdownHeight: "get_dropdownHeight",get_dropdownWidth: "get_dropdownWidth",get_virtual: "get_virtual",set_type: "set_type",get_type: "get_type",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_handlerStyleNames: "set_handlerStyleNames",get_handlerStyleNames: "get_handlerStyleNames"})
+	,__properties__: Object.assign({}, haxe_ui_components_Button.prototype.__properties__, {set_selectedItem: "set_selectedItem",get_selectedItem: "get_selectedItem",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",set_dropdownSize: "set_dropdownSize",get_dropdownSize: "get_dropdownSize",set_dropdownHeight: "set_dropdownHeight",get_dropdownHeight: "get_dropdownHeight",set_dropdownWidth: "set_dropdownWidth",get_dropdownWidth: "get_dropdownWidth",set_virtual: "set_virtual",get_virtual: "get_virtual",set_type: "set_type",get_type: "get_type",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_handlerStyleNames: "set_handlerStyleNames",get_handlerStyleNames: "get_handlerStyleNames"})
 });
 class haxe_ui_components__$DropDown_HideDropDown extends haxe_ui_behaviours_DefaultBehaviour {
 	constructor(component) {
@@ -12291,6 +14116,53 @@ Object.assign(haxe_ui_components_DropDownBuilder.prototype, {
 	,handler: null
 	,__properties__: Object.assign({}, haxe_ui_components_ButtonBuilder.prototype.__properties__, {get_handler: "get_handler"})
 });
+class haxe_ui_components_HGrid extends haxe_ui_core_Component {
+	constructor() {
+		super();
+		this.set_rows(1);
+	}
+	createDefaults() {
+		super.createDefaults();
+		this._defaultLayoutClass = haxe_ui_layouts_HorizontalGridLayout;
+	}
+	get_rows() {
+		return this._rows;
+	}
+	set_rows(value) {
+		if(this._rows != value) {
+			this._rows = value;
+			(js_Boot.__cast(this.get_layout() , haxe_ui_layouts_HorizontalGridLayout)).set_rows(value);
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		c.set_rows(this.get_rows());
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_HGrid();
+	}
+}
+$hxClasses["haxe.ui.components.HGrid"] = haxe_ui_components_HGrid;
+haxe_ui_components_HGrid.__name__ = "haxe.ui.components.HGrid";
+haxe_ui_components_HGrid.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_components_HGrid.prototype, {
+	__class__: haxe_ui_components_HGrid
+	,_rows: null
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_rows: "set_rows",get_rows: "get_rows"})
+});
 class haxe_ui_core_IDirectionalComponent {
 }
 $hxClasses["haxe.ui.core.IDirectionalComponent"] = haxe_ui_core_IDirectionalComponent;
@@ -12460,6 +14332,74 @@ Object.assign(haxe_ui_components_Progress.prototype, {
 	__class__: haxe_ui_components_Progress
 	,__properties__: Object.assign({}, haxe_ui_components_Range.prototype.__properties__, {set_pos: "set_pos",get_pos: "get_pos",set_indeterminate: "set_indeterminate",get_indeterminate: "get_indeterminate"})
 });
+class haxe_ui_components_HorizontalProgress extends haxe_ui_components_Progress {
+	constructor() {
+		super();
+	}
+	posFromCoord(coord) {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.call("posFromCoord",coord));
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("posFromCoord",haxe_ui_components_HorizontalRangePosFromCoord);
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_HorizontalProgress();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._defaultLayoutClass = haxe_ui_components_HorizontalRangeLayout;
+	}
+}
+$hxClasses["haxe.ui.components.HorizontalProgress"] = haxe_ui_components_HorizontalProgress;
+haxe_ui_components_HorizontalProgress.__name__ = "haxe.ui.components.HorizontalProgress";
+haxe_ui_components_HorizontalProgress.__super__ = haxe_ui_components_Progress;
+Object.assign(haxe_ui_components_HorizontalProgress.prototype, {
+	__class__: haxe_ui_components_HorizontalProgress
+});
+class haxe_ui_components_HorizontalRange extends haxe_ui_components_Range {
+	constructor() {
+		super();
+	}
+	posFromCoord(coord) {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.call("posFromCoord",coord));
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._defaultLayoutClass = haxe_ui_components_HorizontalRangeLayout;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("posFromCoord",haxe_ui_components_HorizontalRangePosFromCoord);
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_HorizontalRange();
+	}
+}
+$hxClasses["haxe.ui.components.HorizontalRange"] = haxe_ui_components_HorizontalRange;
+haxe_ui_components_HorizontalRange.__name__ = "haxe.ui.components.HorizontalRange";
+haxe_ui_components_HorizontalRange.__super__ = haxe_ui_components_Range;
+Object.assign(haxe_ui_components_HorizontalRange.prototype, {
+	__class__: haxe_ui_components_HorizontalRange
+});
 class haxe_ui_components_HorizontalRangePosFromCoord extends haxe_ui_behaviours_Behaviour {
 	constructor(component) {
 		super(component);
@@ -12563,6 +14503,11 @@ class haxe_ui_components_Scroll extends haxe_ui_core_InteractiveComponent {
 	get_min() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("min"));
 	}
+	set_min(value) {
+		this.behaviours.set("min",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"min");
+		return value;
+	}
 	get_max() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("max"));
 	}
@@ -12614,7 +14559,7 @@ haxe_ui_components_Scroll.__interfaces__ = [haxe_ui_core_IDirectionalComponent];
 haxe_ui_components_Scroll.__super__ = haxe_ui_core_InteractiveComponent;
 Object.assign(haxe_ui_components_Scroll.prototype, {
 	__class__: haxe_ui_components_Scroll
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_increment: "set_increment",get_increment: "get_increment",set_pos: "set_pos",get_pos: "get_pos",set_pageSize: "set_pageSize",get_pageSize: "get_pageSize",set_max: "set_max",get_max: "get_max",get_min: "get_min"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_increment: "set_increment",get_increment: "get_increment",set_pos: "set_pos",get_pos: "get_pos",set_pageSize: "set_pageSize",get_pageSize: "get_pageSize",set_max: "set_max",get_max: "get_max",set_min: "set_min",get_min: "get_min"})
 });
 class haxe_ui_components_HorizontalScroll extends haxe_ui_components_Scroll {
 	constructor() {
@@ -12882,6 +14827,37 @@ Object.assign(haxe_ui_components_Slider.prototype, {
 	__class__: haxe_ui_components_Slider
 	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_pos: "set_pos",get_pos: "get_pos",set_end: "set_end",get_end: "get_end",set_start: "set_start",get_start: "get_start",set_precision: "set_precision",get_precision: "get_precision",set_max: "set_max",get_max: "get_max",set_min: "set_min",get_min: "get_min"})
 });
+class haxe_ui_components_HorizontalSlider extends haxe_ui_components_Slider {
+	constructor() {
+		super();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._defaultLayoutClass = haxe_ui_components_HorizontalSliderLayout;
+		this._compositeBuilderClass = haxe_ui_components__$HorizontalSlider_Builder;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_HorizontalSlider();
+	}
+}
+$hxClasses["haxe.ui.components.HorizontalSlider"] = haxe_ui_components_HorizontalSlider;
+haxe_ui_components_HorizontalSlider.__name__ = "haxe.ui.components.HorizontalSlider";
+haxe_ui_components_HorizontalSlider.__super__ = haxe_ui_components_Slider;
+Object.assign(haxe_ui_components_HorizontalSlider.prototype, {
+	__class__: haxe_ui_components_HorizontalSlider
+});
 class haxe_ui_components_HorizontalSliderLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
 		super();
@@ -12943,6 +14919,29 @@ haxe_ui_components_SliderBuilder.__name__ = "haxe.ui.components.SliderBuilder";
 haxe_ui_components_SliderBuilder.__super__ = haxe_ui_core_CompositeBuilder;
 Object.assign(haxe_ui_components_SliderBuilder.prototype, {
 	__class__: haxe_ui_components_SliderBuilder
+});
+class haxe_ui_components__$HorizontalSlider_Builder extends haxe_ui_components_SliderBuilder {
+	constructor(slider) {
+		super(slider);
+		this._slider = slider;
+	}
+	createValueComponent() {
+		return new haxe_ui_components_HorizontalRange();
+	}
+	getStartOffset() {
+		let start = 0;
+		if(this._slider.get_start() != null) {
+			start = this._slider.get_start();
+		}
+		return start;
+	}
+}
+$hxClasses["haxe.ui.components._HorizontalSlider.Builder"] = haxe_ui_components__$HorizontalSlider_Builder;
+haxe_ui_components__$HorizontalSlider_Builder.__name__ = "haxe.ui.components._HorizontalSlider.Builder";
+haxe_ui_components__$HorizontalSlider_Builder.__super__ = haxe_ui_components_SliderBuilder;
+Object.assign(haxe_ui_components__$HorizontalSlider_Builder.prototype, {
+	__class__: haxe_ui_components__$HorizontalSlider_Builder
+	,_slider: null
 });
 class haxe_ui_components_Image extends haxe_ui_core_Component {
 	constructor() {
@@ -13060,6 +15059,12 @@ class haxe_ui_components__$Image_ImageLayout extends haxe_ui_layouts_DefaultLayo
 	get_imageScaleMode() {
 		return (js_Boot.__cast(this._component , haxe_ui_components_Image)).get_scaleMode();
 	}
+	get_imageHorizontalAlign() {
+		return (js_Boot.__cast(this._component , haxe_ui_components_Image)).get_imageHorizontalAlign();
+	}
+	get_imageVerticalAlign() {
+		return (js_Boot.__cast(this._component , haxe_ui_components_Image)).get_imageVerticalAlign();
+	}
 	resizeChildren() {
 		if(this.get_component().hasImageDisplay()) {
 			let image = js_Boot.__cast(this._component , haxe_ui_components_Image);
@@ -13165,7 +15170,7 @@ haxe_ui_components__$Image_ImageLayout.__name__ = "haxe.ui.components._Image.Ima
 haxe_ui_components__$Image_ImageLayout.__super__ = haxe_ui_layouts_DefaultLayout;
 Object.assign(haxe_ui_components__$Image_ImageLayout.prototype, {
 	__class__: haxe_ui_components__$Image_ImageLayout
-	,__properties__: Object.assign({}, haxe_ui_layouts_DefaultLayout.prototype.__properties__, {get_imageScaleMode: "get_imageScaleMode"})
+	,__properties__: Object.assign({}, haxe_ui_layouts_DefaultLayout.prototype.__properties__, {get_imageVerticalAlign: "get_imageVerticalAlign",get_imageHorizontalAlign: "get_imageHorizontalAlign",get_imageScaleMode: "get_imageScaleMode"})
 });
 class haxe_ui_components__$Image_ResourceBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
@@ -13258,6 +15263,29 @@ class haxe_ui_components_Label extends haxe_ui_core_Component {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"text");
 		return value;
 	}
+	get_textAlign() {
+		if(this.customStyle.textAlign != null) {
+			return this.customStyle.textAlign;
+		}
+		if(this.get_style() == null || this.get_style().textAlign == null) {
+			return null;
+		}
+		return this.get_style().textAlign;
+	}
+	set_textAlign(value) {
+		if(this.customStyle.textAlign == value) {
+			return value;
+		}
+		if(this._style == null) {
+			this._style = new haxe_ui_styles_Style(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		}
+		this.customStyle.textAlign = value;
+		this.invalidateComponent("style");
+		if(!(this._layout == null || this._layoutLocked == true)) {
+			this.invalidateComponent("layout");
+		}
+		return value;
+	}
 	cloneComponent() {
 		let c = super.cloneComponent();
 		if(this.get_htmlText() != null) {
@@ -13279,7 +15307,7 @@ haxe_ui_components_Label.__name__ = "haxe.ui.components.Label";
 haxe_ui_components_Label.__super__ = haxe_ui_core_Component;
 Object.assign(haxe_ui_components_Label.prototype, {
 	__class__: haxe_ui_components_Label
-	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_htmlText: "set_htmlText",get_htmlText: "get_htmlText"})
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_textAlign: "set_textAlign",get_textAlign: "get_textAlign",set_htmlText: "set_htmlText",get_htmlText: "get_htmlText"})
 });
 class haxe_ui_components__$Label_LabelLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -13311,6 +15339,12 @@ class haxe_ui_components__$Label_LabelLayout extends haxe_ui_layouts_DefaultLayo
 			size.height += this.get_component().getTextDisplay().get_textHeight();
 		}
 		return size;
+	}
+	textAlign(child) {
+		if(child == null || child.get_style() == null || child.get_style().textAlign == null) {
+			return "left";
+		}
+		return child.get_style().textAlign;
 	}
 }
 $hxClasses["haxe.ui.components._Label.LabelLayout"] = haxe_ui_components__$Label_LabelLayout;
@@ -14909,6 +16943,74 @@ Object.assign(haxe_ui_components__$Stepper_Events.prototype, {
 	__class__: haxe_ui_components__$Stepper_Events
 	,_stepper: null
 });
+class haxe_ui_components_Switch extends haxe_ui_core_Component {
+	constructor() {
+		super();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_components__$Switch_Builder;
+		this._defaultLayoutClass = haxe_ui_layouts_HorizontalLayout;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("selected",haxe_ui_components__$Switch_SelectedBehaviour);
+		this.behaviours.register("value",haxe_ui_behaviours_DefaultBehaviour);
+		this.behaviours.register("text",haxe_ui_components__$Switch_TextBehaviour);
+		this.behaviours.register("textOn",haxe_ui_behaviours_DefaultBehaviour);
+		this.behaviours.register("textOff",haxe_ui_behaviours_DefaultBehaviour);
+	}
+	get_selected() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("selected"));
+	}
+	set_selected(value) {
+		this.behaviours.set("selected",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selected");
+		return value;
+	}
+	get_textOn() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("textOn"));
+	}
+	set_textOn(value) {
+		this.behaviours.set("textOn",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"textOn");
+		return value;
+	}
+	get_textOff() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("textOff"));
+	}
+	set_textOff(value) {
+		this.behaviours.set("textOff",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"textOff");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		c.set_selected(this.get_selected());
+		if(this.get_textOn() != null) {
+			c.set_textOn(this.get_textOn());
+		}
+		if(this.get_textOff() != null) {
+			c.set_textOff(this.get_textOff());
+		}
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_Switch();
+	}
+}
+$hxClasses["haxe.ui.components.Switch"] = haxe_ui_components_Switch;
+haxe_ui_components_Switch.__name__ = "haxe.ui.components.Switch";
+haxe_ui_components_Switch.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_components_Switch.prototype, {
+	__class__: haxe_ui_components_Switch
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_textOff: "set_textOff",get_textOff: "get_textOff",set_textOn: "set_textOn",get_textOn: "get_textOn",set_selected: "set_selected",get_selected: "get_selected"})
+});
 class haxe_ui_components__$Switch_SelectedBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
 		super(component);
@@ -14950,6 +17052,32 @@ haxe_ui_components__$Switch_TextBehaviour.__name__ = "haxe.ui.components._Switch
 haxe_ui_components__$Switch_TextBehaviour.__super__ = haxe_ui_behaviours_DataBehaviour;
 Object.assign(haxe_ui_components__$Switch_TextBehaviour.prototype, {
 	__class__: haxe_ui_components__$Switch_TextBehaviour
+});
+class haxe_ui_components__$Switch_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(s) {
+		super(s);
+		this._switch = s;
+	}
+	create() {
+		let _gthis = this;
+		if(this._button == null) {
+			this._button = new haxe_ui_components__$Switch_SwitchButtonSub();
+			this._button.set_onChange(function(e) {
+				_gthis._switch.set_selected(_gthis._button.get_selected());
+				_gthis._switch.dispatch(new haxe_ui_events_UIEvent("change"));
+			});
+			this._component.addComponent(this._button);
+		}
+	}
+}
+$hxClasses["haxe.ui.components._Switch.Builder"] = haxe_ui_components__$Switch_Builder;
+haxe_ui_components__$Switch_Builder.__name__ = "haxe.ui.components._Switch.Builder";
+haxe_ui_components__$Switch_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_components__$Switch_Builder.prototype, {
+	__class__: haxe_ui_components__$Switch_Builder
+	,_switch: null
+	,_button: null
+	,_label: null
 });
 class haxe_ui_components__$Switch_SwitchButtonSub extends haxe_ui_core_InteractiveComponent {
 	constructor() {
@@ -15012,8 +17140,38 @@ class haxe_ui_components__$Switch_SwitchButtonSub extends haxe_ui_core_Interacti
 		this.dispatch(new haxe_ui_events_UIEvent("change"));
 		return value;
 	}
+	get_selectedText() {
+		return this._selectedText;
+	}
+	set_selectedText(value) {
+		this._selectedText = value;
+		if(this._ready && this._selected == true) {
+			this._label.set_text(this._selectedText);
+		}
+		return value;
+	}
+	get_unselectedText() {
+		return this._unselectedText;
+	}
+	set_unselectedText(value) {
+		this._unselectedText = value;
+		if(this._ready && this._selected == false) {
+			this._label.set_text(this._unselectedText);
+		}
+		return value;
+	}
 	get_pos() {
 		return this._pos;
+	}
+	set_pos(value) {
+		if(this._pos == value) {
+			return value;
+		}
+		this._pos = value;
+		if(!(this._layout == null || this._layoutLocked == true)) {
+			this.invalidateComponent("layout");
+		}
+		return value;
 	}
 	registerBehaviours() {
 		super.registerBehaviours();
@@ -15047,7 +17205,7 @@ Object.assign(haxe_ui_components__$Switch_SwitchButtonSub.prototype, {
 	,_selectedText: null
 	,_unselectedText: null
 	,_pos: null
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_pos: "get_pos",set_selected: "set_selected",get_selected: "get_selected"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_pos: "set_pos",get_pos: "get_pos",set_unselectedText: "set_unselectedText",get_unselectedText: "get_unselectedText",set_selectedText: "set_selectedText",get_selectedText: "get_selectedText",set_selected: "set_selected",get_selected: "get_selected"})
 });
 class haxe_ui_components__$Switch_SwitchButtonLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -15115,6 +17273,11 @@ class haxe_ui_components_TabBar extends haxe_ui_core_Component {
 	get_selectedTab() {
 		return haxe_ui_util_Variant.toComponent(this.behaviours.get("selectedTab"));
 	}
+	set_selectedTab(value) {
+		this.behaviours.set("selectedTab",haxe_ui_util_Variant.fromComponent(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedTab");
+		return value;
+	}
 	get_tabPosition() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("tabPosition"));
 	}
@@ -15125,6 +17288,11 @@ class haxe_ui_components_TabBar extends haxe_ui_core_Component {
 	}
 	get_tabCount() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("tabCount"));
+	}
+	set_tabCount(value) {
+		this.behaviours.set("tabCount",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"tabCount");
+		return value;
 	}
 	get_closable() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("closable"));
@@ -15152,7 +17320,7 @@ haxe_ui_components_TabBar.__name__ = "haxe.ui.components.TabBar";
 haxe_ui_components_TabBar.__super__ = haxe_ui_core_Component;
 Object.assign(haxe_ui_components_TabBar.prototype, {
 	__class__: haxe_ui_components_TabBar
-	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_closable: "set_closable",get_closable: "get_closable",get_tabCount: "get_tabCount",set_tabPosition: "set_tabPosition",get_tabPosition: "get_tabPosition",get_selectedTab: "get_selectedTab",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex"})
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_closable: "set_closable",get_closable: "get_closable",set_tabCount: "set_tabCount",get_tabCount: "get_tabCount",set_tabPosition: "set_tabPosition",get_tabPosition: "get_tabPosition",set_selectedTab: "set_selectedTab",get_selectedTab: "get_selectedTab",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex"})
 });
 class haxe_ui_components__$TabBar_Layout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -15614,6 +17782,9 @@ class haxe_ui_components__$TabBar_TabBarButton extends haxe_ui_components_Button
 		this._closable = false;
 		super._hx_constructor();
 	}
+	get_closable() {
+		return this._closable;
+	}
 	set_closable(value) {
 		if(this._closable == value) {
 			return value;
@@ -15671,7 +17842,7 @@ haxe_ui_components__$TabBar_TabBarButton.__super__ = haxe_ui_components_Button;
 Object.assign(haxe_ui_components__$TabBar_TabBarButton.prototype, {
 	__class__: haxe_ui_components__$TabBar_TabBarButton
 	,_closable: null
-	,__properties__: Object.assign({}, haxe_ui_components_Button.prototype.__properties__, {set_closable: "set_closable"})
+	,__properties__: Object.assign({}, haxe_ui_components_Button.prototype.__properties__, {set_closable: "set_closable",get_closable: "get_closable"})
 });
 class haxe_ui_components__$TabBar_TabBarButtonLayout extends haxe_ui_components_ButtonLayout {
 	constructor() {
@@ -15704,8 +17875,14 @@ class haxe_ui_components_TextArea extends haxe_ui_core_InteractiveComponent {
 	constructor() {
 		super();
 	}
+	scrollToTop() {
+		return this.behaviours.call("scrollToTop",null);
+	}
 	scrollToBottom() {
 		return this.behaviours.call("scrollToBottom",null);
+	}
+	invalidateComponentScroll() {
+		this.invalidateComponent("scroll");
 	}
 	validateComponentInternal(nextFrame) {
 		if(nextFrame == null) {
@@ -15734,8 +17911,34 @@ class haxe_ui_components_TextArea extends haxe_ui_core_InteractiveComponent {
 	get_placeholder() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("placeholder"));
 	}
+	set_placeholder(value) {
+		this.behaviours.set("placeholder",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"placeholder");
+		return value;
+	}
+	get_wrap() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("wrap"));
+	}
+	set_wrap(value) {
+		this.behaviours.set("wrap",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"wrap");
+		return value;
+	}
+	get_dataSource() {
+		return haxe_ui_util_Variant.toDataSource(this.behaviours.get("dataSource"));
+	}
+	set_dataSource(value) {
+		this.behaviours.set("dataSource",haxe_ui_util_Variant.fromDataSource(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dataSource");
+		return value;
+	}
 	get_autoScrollToBottom() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("autoScrollToBottom"));
+	}
+	set_autoScrollToBottom(value) {
+		this.behaviours.set("autoScrollToBottom",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"autoScrollToBottom");
+		return value;
 	}
 	get_value() {
 		return this.get_text();
@@ -15770,7 +17973,7 @@ haxe_ui_components_TextArea.__interfaces__ = [haxe_ui_focus_IFocusable];
 haxe_ui_components_TextArea.__super__ = haxe_ui_core_InteractiveComponent;
 Object.assign(haxe_ui_components_TextArea.prototype, {
 	__class__: haxe_ui_components_TextArea
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_autoScrollToBottom: "get_autoScrollToBottom",get_placeholder: "get_placeholder"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {set_autoScrollToBottom: "set_autoScrollToBottom",get_autoScrollToBottom: "get_autoScrollToBottom",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_wrap: "set_wrap",get_wrap: "get_wrap",set_placeholder: "set_placeholder",get_placeholder: "get_placeholder"})
 });
 class haxe_ui_components__$TextArea_TextAreaLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -16535,6 +18738,80 @@ Object.assign(haxe_ui_components__$TextField_Builder.prototype, {
 	__class__: haxe_ui_components__$TextField_Builder
 	,_textfield: null
 });
+class haxe_ui_components_Toggle extends haxe_ui_components_Button {
+	constructor() {
+		super();
+		this.set_toggle(true);
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_Toggle();
+	}
+}
+$hxClasses["haxe.ui.components.Toggle"] = haxe_ui_components_Toggle;
+haxe_ui_components_Toggle.__name__ = "haxe.ui.components.Toggle";
+haxe_ui_components_Toggle.__super__ = haxe_ui_components_Button;
+Object.assign(haxe_ui_components_Toggle.prototype, {
+	__class__: haxe_ui_components_Toggle
+});
+class haxe_ui_components_VGrid extends haxe_ui_core_Component {
+	constructor() {
+		super();
+		this.set_columns(1);
+	}
+	createDefaults() {
+		super.createDefaults();
+		this._defaultLayoutClass = haxe_ui_layouts_VerticalGridLayout;
+	}
+	get_columns() {
+		return this._columns;
+	}
+	set_columns(value) {
+		if(this._columns != value) {
+			this._columns = value;
+			(js_Boot.__cast(this.get_layout() , haxe_ui_layouts_VerticalGridLayout)).set_columns(value);
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		c.set_columns(this.get_columns());
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_VGrid();
+	}
+}
+$hxClasses["haxe.ui.components.VGrid"] = haxe_ui_components_VGrid;
+haxe_ui_components_VGrid.__name__ = "haxe.ui.components.VGrid";
+haxe_ui_components_VGrid.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_components_VGrid.prototype, {
+	__class__: haxe_ui_components_VGrid
+	,_columns: null
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_columns: "set_columns",get_columns: "get_columns"})
+});
 class haxe_ui_components_VerticalProgress extends haxe_ui_components_Progress {
 	constructor() {
 		super();
@@ -16891,6 +19168,83 @@ haxe_ui_components__$VerticalSlider_Builder.__super__ = haxe_ui_components_Slide
 Object.assign(haxe_ui_components__$VerticalSlider_Builder.prototype, {
 	__class__: haxe_ui_components__$VerticalSlider_Builder
 });
+class haxe_ui_containers_Absolute extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+		this.set_layout(new haxe_ui_layouts_AbsoluteLayout());
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Absolute();
+	}
+}
+$hxClasses["haxe.ui.containers.Absolute"] = haxe_ui_containers_Absolute;
+haxe_ui_containers_Absolute.__name__ = "haxe.ui.containers.Absolute";
+haxe_ui_containers_Absolute.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_Absolute.prototype, {
+	__class__: haxe_ui_containers_Absolute
+});
+class haxe_ui_containers_Accordion extends haxe_ui_containers_VBox {
+	constructor() {
+		super();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._internalEventsClass = haxe_ui_containers__$Accordion_Events;
+		this._compositeBuilderClass = haxe_ui_containers__$Accordion_Builder;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("pageIndex",haxe_ui_containers__$Accordion_PageIndex,haxe_ui_util_Variant.fromFloat(-1));
+		this.behaviours.register("selectedPage",haxe_ui_behaviours_DefaultBehaviour);
+	}
+	get_pageIndex() {
+		return haxe_ui_util_Variant.toInt(this.behaviours.get("pageIndex"));
+	}
+	set_pageIndex(value) {
+		this.behaviours.set("pageIndex",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"pageIndex");
+		return value;
+	}
+	get_selectedPage() {
+		return haxe_ui_util_Variant.toComponent(this.behaviours.get("selectedPage"));
+	}
+	set_selectedPage(value) {
+		this.behaviours.set("selectedPage",haxe_ui_util_Variant.fromComponent(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedPage");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Accordion();
+	}
+}
+$hxClasses["haxe.ui.containers.Accordion"] = haxe_ui_containers_Accordion;
+haxe_ui_containers_Accordion.__name__ = "haxe.ui.containers.Accordion";
+haxe_ui_containers_Accordion.__super__ = haxe_ui_containers_VBox;
+Object.assign(haxe_ui_containers_Accordion.prototype, {
+	__class__: haxe_ui_containers_Accordion
+	,__properties__: Object.assign({}, haxe_ui_containers_VBox.prototype.__properties__, {set_selectedPage: "set_selectedPage",get_selectedPage: "get_selectedPage",set_pageIndex: "set_pageIndex",get_pageIndex: "get_pageIndex"})
+});
 class haxe_ui_containers__$Accordion_PageIndex extends haxe_ui_behaviours_DefaultBehaviour {
 	constructor(component) {
 		super(component);
@@ -16927,6 +19281,144 @@ haxe_ui_containers__$Accordion_PageIndex.__name__ = "haxe.ui.containers._Accordi
 haxe_ui_containers__$Accordion_PageIndex.__super__ = haxe_ui_behaviours_DefaultBehaviour;
 Object.assign(haxe_ui_containers__$Accordion_PageIndex.prototype, {
 	__class__: haxe_ui_containers__$Accordion_PageIndex
+});
+class haxe_ui_containers__$Accordion_Events extends haxe_ui_events_Events {
+	constructor(accordion) {
+		super(accordion);
+		this._accordion = accordion;
+	}
+	register() {
+		let buttons = this._target.findComponents(null,haxe_ui_components_Button,1);
+		let _g = 0;
+		while(_g < buttons.length) {
+			let button = buttons[_g];
+			++_g;
+			if(button.hasEvent("change",$bind(this,this.onButtonChanged)) == false) {
+				button.registerEvent("change",$bind(this,this.onButtonChanged));
+			}
+		}
+	}
+	unregister() {
+		let buttons = this._target.findComponents(null,haxe_ui_components_Button,1);
+		let _g = 0;
+		while(_g < buttons.length) buttons[_g++].unregisterEvent("change",$bind(this,this.onButtonChanged));
+	}
+	onButtonChanged(event) {
+		let buttons = this._target.findComponents(null,haxe_ui_components_Button,1);
+		let button = event.target;
+		let index = buttons.indexOf(button);
+		if(button.get_selected() == true) {
+			if(index == this._accordion.get_pageIndex()) {
+				return;
+			}
+			this._accordion.set_pageIndex(index);
+		} else if(index == this._accordion.get_pageIndex()) {
+			button.set_selected(true);
+		}
+	}
+}
+$hxClasses["haxe.ui.containers._Accordion.Events"] = haxe_ui_containers__$Accordion_Events;
+haxe_ui_containers__$Accordion_Events.__name__ = "haxe.ui.containers._Accordion.Events";
+haxe_ui_containers__$Accordion_Events.__super__ = haxe_ui_events_Events;
+Object.assign(haxe_ui_containers__$Accordion_Events.prototype, {
+	__class__: haxe_ui_containers__$Accordion_Events
+	,_accordion: null
+});
+class haxe_ui_containers__$Accordion_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(accordion) {
+		super(accordion);
+		this._accordion = accordion;
+	}
+	onReady() {
+		super.onReady();
+		let _g = 0;
+		let _this = this._accordion;
+		let _g1 = _this._children == null ? [] : _this._children;
+		while(_g < _g1.length) _g1[_g++].set_animatable(true);
+	}
+	addComponent(child) {
+		if(!child.hasClass("accordion-button") && !child.hasClass("accordion-page")) {
+			let button = new haxe_ui_components_Button();
+			button.set_text(child.get_text());
+			button.addClass("accordion-button");
+			button.set_toggle(true);
+			button.scriptAccess = false;
+			this._accordion.addComponent(button);
+			child.set_animatable(false);
+			child.set_percentWidth(100);
+			child.addClass("accordion-page");
+			let c = this._accordion.addComponent(child);
+			if(this._accordion.get_pageIndex() == -1) {
+				child.set_percentHeight(100);
+				this._accordion.set_pageIndex(0);
+			} else {
+				child.set_hidden(true);
+			}
+			child.set_onAnimationEnd(function(e) {
+				if(e.target.hasClass(":collapsed")) {
+					e.target.set_hidden(true);
+				}
+			});
+			this._component.registerInternalEvents(null,true);
+			let buttonCount = 0;
+			let pageCount = 0;
+			let _g = 0;
+			let _this = this._accordion;
+			let _g1 = _this._children == null ? [] : _this._children;
+			while(_g < _g1.length) {
+				let child = _g1[_g];
+				++_g;
+				if(child.hasClass("accordion-button")) {
+					if(buttonCount == 0) {
+						child.swapClass("first","last",false);
+					} else {
+						let tmp;
+						let _this = this._component;
+						if((_this._children == null ? [] : _this._children).length / 2 > 1) {
+							let _this = this._component;
+							tmp = buttonCount == (_this._children == null ? [] : _this._children).length / 2 - 1;
+						} else {
+							tmp = false;
+						}
+						if(tmp) {
+							child.swapClass("last","first",false);
+						} else {
+							child.removeClasses(["first","last"],false);
+						}
+					}
+					++buttonCount;
+				} else if(child.hasClass("accordion-page")) {
+					if(pageCount == 0) {
+						child.swapClass("first","last",false);
+					} else {
+						let tmp;
+						let _this = this._component;
+						if((_this._children == null ? [] : _this._children).length / 2 > 1) {
+							let _this = this._component;
+							tmp = pageCount == (_this._children == null ? [] : _this._children).length / 2 - 1;
+						} else {
+							tmp = false;
+						}
+						if(tmp) {
+							child.swapClass("last","first",false);
+						} else {
+							child.removeClasses(["first","last"],false);
+						}
+					}
+					++pageCount;
+				}
+			}
+			return c;
+		}
+		return null;
+	}
+}
+$hxClasses["haxe.ui.containers._Accordion.Builder"] = haxe_ui_containers__$Accordion_Builder;
+haxe_ui_containers__$Accordion_Builder.__name__ = "haxe.ui.containers._Accordion.Builder";
+haxe_ui_containers__$Accordion_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers__$Accordion_Builder.prototype, {
+	__class__: haxe_ui_containers__$Accordion_Builder
+	,_accordion: null
 });
 class haxe_ui_containers_CalendarView extends haxe_ui_containers_VBox {
 	constructor() {
@@ -17093,6 +19585,74 @@ Object.assign(haxe_ui_containers__$CalendarView_Builder.prototype, {
 	__class__: haxe_ui_containers__$CalendarView_Builder
 	,_calendarView: null
 });
+class haxe_ui_containers_ContinuousHBox extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+		this.set_layout(new haxe_ui_layouts_HorizontalContinuousLayout());
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_ContinuousHBox();
+	}
+}
+$hxClasses["haxe.ui.containers.ContinuousHBox"] = haxe_ui_containers_ContinuousHBox;
+haxe_ui_containers_ContinuousHBox.__name__ = "haxe.ui.containers.ContinuousHBox";
+haxe_ui_containers_ContinuousHBox.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_ContinuousHBox.prototype, {
+	__class__: haxe_ui_containers_ContinuousHBox
+});
+class haxe_ui_containers_Frame extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("text",haxe_ui_containers__$Frame_TextBehaviour);
+		this.behaviours.register("icon",haxe_ui_containers__$Frame_IconBehaviour);
+	}
+	get_value() {
+		return this.get_text();
+	}
+	set_value(value) {
+		this.set_text(value);
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"text");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Frame();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_containers__$Frame_Builder;
+		this._defaultLayoutClass = haxe_ui_containers__$Frame_Layout;
+	}
+}
+$hxClasses["haxe.ui.containers.Frame"] = haxe_ui_containers_Frame;
+haxe_ui_containers_Frame.__name__ = "haxe.ui.containers.Frame";
+haxe_ui_containers_Frame.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_Frame.prototype, {
+	__class__: haxe_ui_containers_Frame
+});
 class haxe_ui_containers__$Frame_TextBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
 		super(component);
@@ -17129,6 +19689,49 @@ haxe_ui_containers__$Frame_IconBehaviour.__name__ = "haxe.ui.containers._Frame.I
 haxe_ui_containers__$Frame_IconBehaviour.__super__ = haxe_ui_behaviours_DataBehaviour;
 Object.assign(haxe_ui_containers__$Frame_IconBehaviour.prototype, {
 	__class__: haxe_ui_containers__$Frame_IconBehaviour
+});
+class haxe_ui_containers__$Frame_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(frame) {
+		super(frame);
+		this._frame = frame;
+	}
+	create() {
+		this._contents = new haxe_ui_containers_Box();
+		this._contents.set_id("frame-contents");
+		this._contents.addClass("frame-contents");
+		this._frame.addComponent(this._contents);
+		this._label = new haxe_ui_components_Label();
+		this._label.set_text("My Frame");
+		this._label.set_id("frame-title");
+		this._label.addClass("frame-title");
+		this._label.set_includeInLayout(false);
+		this._frame.addComponent(this._label);
+		let line = new haxe_ui_core_Component();
+		line.set_id("frame-left-line");
+		line.addClass("frame-left-line");
+		line.set_includeInLayout(false);
+		this._frame.addComponent(line);
+		let line1 = new haxe_ui_core_Component();
+		line1.set_id("frame-right-line");
+		line1.addClass("frame-right-line");
+		line1.set_includeInLayout(false);
+		this._frame.addComponent(line1);
+	}
+	addComponent(child) {
+		if(child.get_id() != "frame-contents" && child.get_id() != "frame-title" && child.get_id() != "frame-icon" && child.get_id() != "frame-left-line" && child.get_id() != "frame-right-line") {
+			return this._contents.addComponent(child);
+		}
+		return super.addComponent(child);
+	}
+}
+$hxClasses["haxe.ui.containers._Frame.Builder"] = haxe_ui_containers__$Frame_Builder;
+haxe_ui_containers__$Frame_Builder.__name__ = "haxe.ui.containers._Frame.Builder";
+haxe_ui_containers__$Frame_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers__$Frame_Builder.prototype, {
+	__class__: haxe_ui_containers__$Frame_Builder
+	,_frame: null
+	,_contents: null
+	,_label: null
 });
 class haxe_ui_containers__$Frame_Layout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -17184,6 +19787,93 @@ haxe_ui_containers__$Frame_Layout.__name__ = "haxe.ui.containers._Frame.Layout";
 haxe_ui_containers__$Frame_Layout.__super__ = haxe_ui_layouts_DefaultLayout;
 Object.assign(haxe_ui_containers__$Frame_Layout.prototype, {
 	__class__: haxe_ui_containers__$Frame_Layout
+});
+class haxe_ui_containers_Group extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("componentGroup",haxe_ui_behaviours_DataBehaviour,haxe_ui_util_Variant.fromString("group" + haxe_ui_util_GUID.uuid()));
+	}
+	get_componentGroup() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("componentGroup"));
+	}
+	set_componentGroup(value) {
+		this.behaviours.set("componentGroup",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"componentGroup");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if(this.get_componentGroup() != null) {
+			c.set_componentGroup(this.get_componentGroup());
+		}
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Group();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_containers__$Group_Builder;
+	}
+}
+$hxClasses["haxe.ui.containers.Group"] = haxe_ui_containers_Group;
+haxe_ui_containers_Group.__name__ = "haxe.ui.containers.Group";
+haxe_ui_containers_Group.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_Group.prototype, {
+	__class__: haxe_ui_containers_Group
+	,__properties__: Object.assign({}, haxe_ui_containers_Box.prototype.__properties__, {set_componentGroup: "set_componentGroup",get_componentGroup: "get_componentGroup"})
+});
+class haxe_ui_containers__$Group_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(group) {
+		super(group);
+		this._group = group;
+	}
+	addComponent(child) {
+		this.childAdd(child);
+		return super.addComponent(child);
+	}
+	addComponentAt(child,index) {
+		this.childAdd(child);
+		return super.addComponentAt(child,index);
+	}
+	childAdd(child) {
+		if(((child) instanceof haxe_ui_core_InteractiveComponent)) {
+			this.processGroupChild(child);
+		} else {
+			let interactiveChildren = child.findComponents(null,haxe_ui_core_InteractiveComponent);
+			let _g = 0;
+			while(_g < interactiveChildren.length) this.processGroupChild(interactiveChildren[_g++]);
+		}
+	}
+	processGroupChild(child) {
+		if(((child) instanceof haxe_ui_components_OptionBox)) {
+			if(this._group.get_componentGroup() == null) {
+				this._group.set_componentGroup("group" + haxe_ui_util_GUID.uuid());
+			}
+			(js_Boot.__cast(child , haxe_ui_components_OptionBox)).set_componentGroup(this._group.get_componentGroup());
+		}
+		if(child.hasEvent("change",$bind(this,this.childChangeHandler)) == false) {
+			child.registerEvent("change",$bind(this,this.childChangeHandler));
+		}
+	}
+	childChangeHandler(e) {
+		this._group.dispatch(e.clone());
+	}
+}
+$hxClasses["haxe.ui.containers._Group.Builder"] = haxe_ui_containers__$Group_Builder;
+haxe_ui_containers__$Group_Builder.__name__ = "haxe.ui.containers._Group.Builder";
+haxe_ui_containers__$Group_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers__$Group_Builder.prototype, {
+	__class__: haxe_ui_containers__$Group_Builder
+	,_group: null
 });
 class haxe_ui_containers_HBox extends haxe_ui_containers_Box {
 	constructor() {
@@ -17251,6 +19941,194 @@ haxe_ui_containers_Header.__super__ = haxe_ui_containers_HBox;
 Object.assign(haxe_ui_containers_Header.prototype, {
 	__class__: haxe_ui_containers_Header
 });
+class haxe_ui_containers_Splitter extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Splitter();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._internalEventsClass = haxe_ui_containers_SplitterEvents;
+		this._compositeBuilderClass = haxe_ui_containers_SplitterBuilder;
+	}
+}
+$hxClasses["haxe.ui.containers.Splitter"] = haxe_ui_containers_Splitter;
+haxe_ui_containers_Splitter.__name__ = "haxe.ui.containers.Splitter";
+haxe_ui_containers_Splitter.__interfaces__ = [haxe_ui_core_IDirectionalComponent];
+haxe_ui_containers_Splitter.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_Splitter.prototype, {
+	__class__: haxe_ui_containers_Splitter
+});
+class haxe_ui_containers_HorizontalSplitter extends haxe_ui_containers_Splitter {
+	constructor() {
+		super();
+		this.set_layoutName("horizontal");
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._internalEventsClass = haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents;
+		this._compositeBuilderClass = haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_HorizontalSplitter();
+	}
+}
+$hxClasses["haxe.ui.containers.HorizontalSplitter"] = haxe_ui_containers_HorizontalSplitter;
+haxe_ui_containers_HorizontalSplitter.__name__ = "haxe.ui.containers.HorizontalSplitter";
+haxe_ui_containers_HorizontalSplitter.__super__ = haxe_ui_containers_Splitter;
+Object.assign(haxe_ui_containers_HorizontalSplitter.prototype, {
+	__class__: haxe_ui_containers_HorizontalSplitter
+});
+class haxe_ui_containers_SplitterEvents extends haxe_ui_events_Events {
+	constructor(splitter) {
+		haxe_ui_events_Events._hx_skip_constructor = true;
+		super();
+		haxe_ui_events_Events._hx_skip_constructor = false;
+		this._hx_constructor(splitter);
+	}
+	_hx_constructor(splitter) {
+		this._currentOffset = null;
+		this._currentGripper = null;
+		super._hx_constructor(splitter);
+		this._splitter = splitter;
+	}
+	register() {
+		let grippers = this._splitter.findComponents((js_Boot.__cast(this._splitter._compositeBuilder , haxe_ui_containers_SplitterBuilder)).getSplitterClass(),haxe_ui_core_Component,1);
+		let _g = 0;
+		while(_g < grippers.length) grippers[_g++].registerEvent("mousedown",$bind(this,this.onGripperMouseDown));
+	}
+	unregister() {
+		let grippers = this._splitter.findComponents((js_Boot.__cast(this._splitter._compositeBuilder , haxe_ui_containers_SplitterBuilder)).getSplitterClass(),haxe_ui_core_Component,1);
+		let _g = 0;
+		while(_g < grippers.length) grippers[_g++].unregisterEvent("mousedown",$bind(this,this.onGripperMouseDown));
+	}
+	onGripperMouseDown(event) {
+		this._currentGripper = js_Boot.__cast(event.target , haxe_ui_containers__$Splitter_SizerGripper);
+		this._currentOffset = new haxe_ui_geom_Point(event.screenX,event.screenY);
+		haxe_ui_core_Screen.get_instance().registerEvent("mousemove",$bind(this,this.onScreenMouseMove));
+		haxe_ui_core_Screen.get_instance().registerEvent("mouseup",$bind(this,this.onScreenMouseUp));
+	}
+	onScreenMouseMove(event) {
+		this._currentGripper.addClass(":hover");
+		let index = this._splitter.getComponentIndex(this._currentGripper);
+		this.handleResize(this._splitter.getComponentAt(index - 1),this._splitter.getComponentAt(index + 1),event);
+		this._currentOffset = new haxe_ui_geom_Point(event.screenX,event.screenY);
+	}
+	handleResize(prev,next,event) {
+	}
+	onScreenMouseUp(event) {
+		haxe_ui_core_Screen.get_instance().unregisterEvent("mousemove",$bind(this,this.onScreenMouseMove));
+		haxe_ui_core_Screen.get_instance().unregisterEvent("mouseup",$bind(this,this.onScreenMouseUp));
+		window.document.body.style.cursor = null;
+	}
+}
+$hxClasses["haxe.ui.containers.SplitterEvents"] = haxe_ui_containers_SplitterEvents;
+haxe_ui_containers_SplitterEvents.__name__ = "haxe.ui.containers.SplitterEvents";
+haxe_ui_containers_SplitterEvents.__super__ = haxe_ui_events_Events;
+Object.assign(haxe_ui_containers_SplitterEvents.prototype, {
+	__class__: haxe_ui_containers_SplitterEvents
+	,_splitter: null
+	,_currentGripper: null
+	,_currentOffset: null
+});
+class haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents extends haxe_ui_containers_SplitterEvents {
+	constructor(splitter) {
+		super(splitter);
+	}
+	onGripperMouseDown(event) {
+		super.onGripperMouseDown(event);
+		window.document.body.style.cursor = "col-resize";
+	}
+	handleResize(prev,next,event) {
+		let delta = event.screenX - this._currentOffset.x;
+		let prevCX = prev.set_width(prev.get_width() + delta);
+		let nextCX = next.set_width(next.get_width() - delta);
+		let ucx = this._splitter.get_layout().get_usableWidth();
+		if(prev.get_percentWidth() != null) {
+			prev.set_percentWidth(prevCX / ucx * 100);
+		} else {
+			prev.set_width(prevCX);
+		}
+		if(next.get_percentWidth() != null) {
+			next.set_percentWidth(nextCX / ucx * 100);
+		} else {
+			next.set_width(nextCX);
+		}
+	}
+}
+$hxClasses["haxe.ui.containers._HorizontalSplitter.HorizontalSplitterEvents"] = haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents;
+haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents.__name__ = "haxe.ui.containers._HorizontalSplitter.HorizontalSplitterEvents";
+haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents.__super__ = haxe_ui_containers_SplitterEvents;
+Object.assign(haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents.prototype, {
+	__class__: haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterEvents
+});
+class haxe_ui_containers_SplitterBuilder extends haxe_ui_core_CompositeBuilder {
+	constructor(splitter) {
+		super(splitter);
+		this._splitter = splitter;
+	}
+	addComponent(child) {
+		let _this = this._splitter;
+		if((_this._children == null ? [] : _this._children).length > 0 && child.hasClass(this.getSplitterClass()) == false) {
+			let gripper = new haxe_ui_containers__$Splitter_SizerGripper();
+			gripper.set_id(this.getSplitterClass());
+			gripper.addClass(this.getSplitterClass());
+			this._splitter.addComponent(gripper);
+			this._splitter.registerInternalEvents(null,true);
+		}
+		return null;
+	}
+	getSplitterClass() {
+		return "splitter-gripper";
+	}
+}
+$hxClasses["haxe.ui.containers.SplitterBuilder"] = haxe_ui_containers_SplitterBuilder;
+haxe_ui_containers_SplitterBuilder.__name__ = "haxe.ui.containers.SplitterBuilder";
+haxe_ui_containers_SplitterBuilder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers_SplitterBuilder.prototype, {
+	__class__: haxe_ui_containers_SplitterBuilder
+	,_splitter: null
+});
+class haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder extends haxe_ui_containers_SplitterBuilder {
+	constructor(splitter) {
+		super(splitter);
+	}
+	getSplitterClass() {
+		return "horizontal-splitter-gripper";
+	}
+}
+$hxClasses["haxe.ui.containers._HorizontalSplitter.HorizontalSplitterBuilder"] = haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder;
+haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder.__name__ = "haxe.ui.containers._HorizontalSplitter.HorizontalSplitterBuilder";
+haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder.__super__ = haxe_ui_containers_SplitterBuilder;
+Object.assign(haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder.prototype, {
+	__class__: haxe_ui_containers__$HorizontalSplitter_HorizontalSplitterBuilder
+});
 class haxe_ui_containers_IVirtualContainer {
 }
 $hxClasses["haxe.ui.containers.IVirtualContainer"] = haxe_ui_containers_IVirtualContainer;
@@ -17258,17 +20136,35 @@ haxe_ui_containers_IVirtualContainer.__name__ = "haxe.ui.containers.IVirtualCont
 haxe_ui_containers_IVirtualContainer.__isInterface__ = true;
 Object.assign(haxe_ui_containers_IVirtualContainer.prototype, {
 	__class__: haxe_ui_containers_IVirtualContainer
+	,get_itemWidth: null
+	,set_itemWidth: null
 	,get_itemHeight: null
+	,set_itemHeight: null
 	,get_itemCount: null
+	,set_itemCount: null
 	,get_variableItemSize: null
+	,set_variableItemSize: null
 	,get_virtual: null
+	,set_virtual: null
+	,get_hscrollPos: null
+	,set_hscrollPos: null
+	,get_hscrollMax: null
+	,set_hscrollMax: null
+	,get_hscrollPageSize: null
+	,set_hscrollPageSize: null
 	,get_vscrollPos: null
+	,set_vscrollPos: null
+	,get_vscrollMax: null
 	,set_vscrollMax: null
+	,get_vscrollPageSize: null
 	,set_vscrollPageSize: null
 	,get_itemRenderer: null
+	,set_itemRenderer: null
 	,get_itemRendererFunction: null
+	,set_itemRendererFunction: null
 	,get_itemRendererClass: null
-	,__properties__: {get_itemRendererClass: "get_itemRendererClass",get_itemRendererFunction: "get_itemRendererFunction",get_itemRenderer: "get_itemRenderer",get_vscrollPos: "get_vscrollPos",get_virtual: "get_virtual",get_variableItemSize: "get_variableItemSize",get_itemCount: "get_itemCount",get_itemHeight: "get_itemHeight",set_vscrollPageSize: "set_vscrollPageSize",set_vscrollMax: "set_vscrollMax"}
+	,set_itemRendererClass: null
+	,__properties__: {set_itemRendererClass: "set_itemRendererClass",get_itemRendererClass: "get_itemRendererClass",set_itemRendererFunction: "set_itemRendererFunction",get_itemRendererFunction: "get_itemRendererFunction",set_itemRenderer: "set_itemRenderer",get_itemRenderer: "get_itemRenderer",set_vscrollPageSize: "set_vscrollPageSize",get_vscrollPageSize: "get_vscrollPageSize",set_vscrollMax: "set_vscrollMax",get_vscrollMax: "get_vscrollMax",set_vscrollPos: "set_vscrollPos",get_vscrollPos: "get_vscrollPos",set_hscrollPageSize: "set_hscrollPageSize",get_hscrollPageSize: "get_hscrollPageSize",set_hscrollMax: "set_hscrollMax",get_hscrollMax: "get_hscrollMax",set_hscrollPos: "set_hscrollPos",get_hscrollPos: "get_hscrollPos",set_virtual: "set_virtual",get_virtual: "get_virtual",set_variableItemSize: "set_variableItemSize",get_variableItemSize: "get_variableItemSize",set_itemCount: "set_itemCount",get_itemCount: "get_itemCount",set_itemHeight: "set_itemHeight",get_itemHeight: "get_itemHeight",set_itemWidth: "set_itemWidth",get_itemWidth: "get_itemWidth"}
 });
 class haxe_ui_containers_ScrollView extends haxe_ui_core_Component {
 	constructor() {
@@ -17326,6 +20222,43 @@ class haxe_ui_containers_ScrollView extends haxe_ui_core_Component {
 	get_contentLayoutName() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("contentLayoutName"));
 	}
+	set_contentLayoutName(value) {
+		this.behaviours.set("contentLayoutName",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"contentLayoutName");
+		return value;
+	}
+	get_contentWidth() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("contentWidth"));
+	}
+	set_contentWidth(value) {
+		this.behaviours.set("contentWidth",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"contentWidth");
+		return value;
+	}
+	get_percentContentWidth() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("percentContentWidth"));
+	}
+	set_percentContentWidth(value) {
+		this.behaviours.set("percentContentWidth",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"percentContentWidth");
+		return value;
+	}
+	get_contentHeight() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("contentHeight"));
+	}
+	set_contentHeight(value) {
+		this.behaviours.set("contentHeight",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"contentHeight");
+		return value;
+	}
+	get_percentContentHeight() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("percentContentHeight"));
+	}
+	set_percentContentHeight(value) {
+		this.behaviours.set("percentContentHeight",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"percentContentHeight");
+		return value;
+	}
 	get_hscrollPos() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("hscrollPos"));
 	}
@@ -17336,6 +20269,19 @@ class haxe_ui_containers_ScrollView extends haxe_ui_core_Component {
 	}
 	get_hscrollMax() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("hscrollMax"));
+	}
+	set_hscrollMax(value) {
+		this.behaviours.set("hscrollMax",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"hscrollMax");
+		return value;
+	}
+	get_hscrollPageSize() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("hscrollPageSize"));
+	}
+	set_hscrollPageSize(value) {
+		this.behaviours.set("hscrollPageSize",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"hscrollPageSize");
+		return value;
 	}
 	get_vscrollPos() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("vscrollPos"));
@@ -17353,6 +20299,9 @@ class haxe_ui_containers_ScrollView extends haxe_ui_core_Component {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"vscrollMax");
 		return value;
 	}
+	get_vscrollPageSize() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("vscrollPageSize"));
+	}
 	set_vscrollPageSize(value) {
 		this.behaviours.set("vscrollPageSize",haxe_ui_util_Variant.fromFloat(value));
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"vscrollPageSize");
@@ -17360,6 +20309,11 @@ class haxe_ui_containers_ScrollView extends haxe_ui_core_Component {
 	}
 	get_scrollMode() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("scrollMode"));
+	}
+	set_scrollMode(value) {
+		this.behaviours.set("scrollMode",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"scrollMode");
+		return value;
 	}
 	cloneComponent() {
 		let c = super.cloneComponent();
@@ -17379,7 +20333,7 @@ haxe_ui_containers_ScrollView.__name__ = "haxe.ui.containers.ScrollView";
 haxe_ui_containers_ScrollView.__super__ = haxe_ui_core_Component;
 Object.assign(haxe_ui_containers_ScrollView.prototype, {
 	__class__: haxe_ui_containers_ScrollView
-	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {get_scrollMode: "get_scrollMode",set_vscrollPageSize: "set_vscrollPageSize",set_vscrollMax: "set_vscrollMax",get_vscrollMax: "get_vscrollMax",set_vscrollPos: "set_vscrollPos",get_vscrollPos: "get_vscrollPos",get_hscrollMax: "get_hscrollMax",set_hscrollPos: "set_hscrollPos",get_hscrollPos: "get_hscrollPos",get_contentLayoutName: "get_contentLayoutName",set_virtual: "set_virtual",get_virtual: "get_virtual"})
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_scrollMode: "set_scrollMode",get_scrollMode: "get_scrollMode",set_vscrollPageSize: "set_vscrollPageSize",get_vscrollPageSize: "get_vscrollPageSize",set_vscrollMax: "set_vscrollMax",get_vscrollMax: "get_vscrollMax",set_vscrollPos: "set_vscrollPos",get_vscrollPos: "get_vscrollPos",set_hscrollPageSize: "set_hscrollPageSize",get_hscrollPageSize: "get_hscrollPageSize",set_hscrollMax: "set_hscrollMax",get_hscrollMax: "get_hscrollMax",set_hscrollPos: "set_hscrollPos",get_hscrollPos: "get_hscrollPos",set_percentContentHeight: "set_percentContentHeight",get_percentContentHeight: "get_percentContentHeight",set_contentHeight: "set_contentHeight",get_contentHeight: "get_contentHeight",set_percentContentWidth: "set_percentContentWidth",get_percentContentWidth: "get_percentContentWidth",set_contentWidth: "set_contentWidth",get_contentWidth: "get_contentWidth",set_contentLayoutName: "set_contentLayoutName",get_contentLayoutName: "get_contentLayoutName",set_virtual: "set_virtual",get_virtual: "get_virtual"})
 });
 class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 	constructor() {
@@ -17388,8 +20342,26 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 	get_itemRendererFunction() {
 		return this._itemRendererFunction;
 	}
+	set_itemRendererFunction(value) {
+		if(this._itemRendererFunction != value) {
+			this._itemRendererFunction = value;
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
+	}
 	get_itemRendererClass() {
 		return this._itemRendererClass;
+	}
+	set_itemRendererClass(value) {
+		if(this._itemRendererClass != value) {
+			this._itemRendererClass = value;
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
 	}
 	get_itemRenderer() {
 		return this._itemRenderer;
@@ -17425,8 +20397,21 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dataSource");
 		return value;
 	}
+	get_itemWidth() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("itemWidth"));
+	}
+	set_itemWidth(value) {
+		this.behaviours.set("itemWidth",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"itemWidth");
+		return value;
+	}
 	get_itemHeight() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("itemHeight"));
+	}
+	set_itemHeight(value) {
+		this.behaviours.set("itemHeight",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"itemHeight");
+		return value;
 	}
 	get_itemCount() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("itemCount"));
@@ -17439,6 +20424,11 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 	get_variableItemSize() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("variableItemSize"));
 	}
+	set_variableItemSize(value) {
+		this.behaviours.set("variableItemSize",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"variableItemSize");
+		return value;
+	}
 	get_selectedIndex() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("selectedIndex"));
 	}
@@ -17450,6 +20440,11 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 	get_selectedItem() {
 		return this.behaviours.getDynamic("selectedItem");
 	}
+	set_selectedItem(value) {
+		this.behaviours.set("selectedItem",haxe_ui_util_Variant.fromDynamic(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedItem");
+		return value;
+	}
 	get_selectedIndices() {
 		return haxe_ui_util_Variant.toArray(this.behaviours.get("selectedIndices"));
 	}
@@ -17458,11 +20453,29 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedIndices");
 		return value;
 	}
+	get_selectedItems() {
+		return haxe_ui_util_Variant.toArray(this.behaviours.get("selectedItems"));
+	}
+	set_selectedItems(value) {
+		this.behaviours.set("selectedItems",haxe_ui_util_Variant.fromArray(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedItems");
+		return value;
+	}
 	get_selectionMode() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("selectionMode"));
 	}
+	set_selectionMode(value) {
+		this.behaviours.set("selectionMode",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectionMode");
+		return value;
+	}
 	get_longPressSelectionTime() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("longPressSelectionTime"));
+	}
+	set_longPressSelectionTime(value) {
+		this.behaviours.set("longPressSelectionTime",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"longPressSelectionTime");
+		return value;
 	}
 	cloneComponent() {
 		let c = super.cloneComponent();
@@ -17482,6 +20495,17 @@ class haxe_ui_containers_ListView extends haxe_ui_containers_ScrollView {
 		this._compositeBuilderClass = haxe_ui_containers__$ListView_ListViewBuilder;
 		this._defaultLayoutClass = haxe_ui_layouts_VerticalVirtualLayout;
 	}
+	set_onComponentEvent(value) {
+		if(this.__onComponentEvent != null) {
+			this.unregisterEvent("itemComponentEvent",this.__onComponentEvent);
+			this.__onComponentEvent = null;
+		}
+		if(value != null) {
+			this.__onComponentEvent = value;
+			this.registerEvent("itemComponentEvent",value);
+		}
+		return value;
+	}
 }
 $hxClasses["haxe.ui.containers.ListView"] = haxe_ui_containers_ListView;
 haxe_ui_containers_ListView.__name__ = "haxe.ui.containers.ListView";
@@ -17492,7 +20516,9 @@ Object.assign(haxe_ui_containers_ListView.prototype, {
 	,_itemRendererFunction: null
 	,_itemRendererClass: null
 	,_itemRenderer: null
-	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {get_longPressSelectionTime: "get_longPressSelectionTime",get_selectionMode: "get_selectionMode",set_selectedIndices: "set_selectedIndices",get_selectedIndices: "get_selectedIndices",get_selectedItem: "get_selectedItem",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",get_variableItemSize: "get_variableItemSize",set_itemCount: "set_itemCount",get_itemCount: "get_itemCount",get_itemHeight: "get_itemHeight",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_itemRenderer: "set_itemRenderer",get_itemRenderer: "get_itemRenderer",get_itemRendererClass: "get_itemRendererClass",get_itemRendererFunction: "get_itemRendererFunction"})
+	,__onComponentEvent: null
+	,onComponentEvent: null
+	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {set_onComponentEvent: "set_onComponentEvent",set_longPressSelectionTime: "set_longPressSelectionTime",get_longPressSelectionTime: "get_longPressSelectionTime",set_selectionMode: "set_selectionMode",get_selectionMode: "get_selectionMode",set_selectedItems: "set_selectedItems",get_selectedItems: "get_selectedItems",set_selectedIndices: "set_selectedIndices",get_selectedIndices: "get_selectedIndices",set_selectedItem: "set_selectedItem",get_selectedItem: "get_selectedItem",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",set_variableItemSize: "set_variableItemSize",get_variableItemSize: "get_variableItemSize",set_itemCount: "set_itemCount",get_itemCount: "get_itemCount",set_itemHeight: "set_itemHeight",get_itemHeight: "get_itemHeight",set_itemWidth: "set_itemWidth",get_itemWidth: "get_itemWidth",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_itemRenderer: "set_itemRenderer",get_itemRenderer: "get_itemRenderer",set_itemRendererClass: "set_itemRendererClass",get_itemRendererClass: "get_itemRendererClass",set_itemRendererFunction: "set_itemRendererFunction",get_itemRendererFunction: "get_itemRendererFunction"})
 });
 class haxe_ui_containers_ScrollViewEvents extends haxe_ui_events_Events {
 	constructor(scrollview) {
@@ -17505,6 +20531,7 @@ class haxe_ui_containers_ScrollViewEvents extends haxe_ui_events_Events {
 		this._fadeTimer = null;
 		this._containerEventsPaused = false;
 		this._lastMousePos = null;
+		this._movementThreshold = 3;
 		this._inertia = null;
 		super._hx_constructor(scrollview);
 		this._scrollview = scrollview;
@@ -17809,6 +20836,7 @@ Object.assign(haxe_ui_containers_ScrollViewEvents.prototype, {
 	,_scrollview: null
 	,_offset: null
 	,_inertia: null
+	,_movementThreshold: null
 	,_lastMousePos: null
 	,_containerEventsPaused: null
 	,_fadeTimer: null
@@ -18866,9 +21894,76 @@ haxe_ui_containers__$ScrollView_ScrollModeBehaviour.__super__ = haxe_ui_behaviou
 Object.assign(haxe_ui_containers__$ScrollView_ScrollModeBehaviour.prototype, {
 	__class__: haxe_ui_containers__$ScrollView_ScrollModeBehaviour
 });
+class haxe_ui_containers__$Splitter_SizerGripper extends haxe_ui_core_InteractiveComponent {
+	constructor() {
+		super();
+		this.registerEvent("mouseover",$bind(this,this.onMouseOver));
+		this.registerEvent("mouseout",$bind(this,this.onMouseOut));
+		this.addComponent(new haxe_ui_components_Image());
+	}
+	onMouseOver(event) {
+		this.addClass(":hover");
+	}
+	onMouseOut(event) {
+		this.removeClass(":hover");
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers__$Splitter_SizerGripper();
+	}
+}
+$hxClasses["haxe.ui.containers._Splitter.SizerGripper"] = haxe_ui_containers__$Splitter_SizerGripper;
+haxe_ui_containers__$Splitter_SizerGripper.__name__ = "haxe.ui.containers._Splitter.SizerGripper";
+haxe_ui_containers__$Splitter_SizerGripper.__super__ = haxe_ui_core_InteractiveComponent;
+Object.assign(haxe_ui_containers__$Splitter_SizerGripper.prototype, {
+	__class__: haxe_ui_containers__$Splitter_SizerGripper
+});
+class haxe_ui_containers_Stack extends haxe_ui_containers_Box {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_Stack();
+	}
+}
+$hxClasses["haxe.ui.containers.Stack"] = haxe_ui_containers_Stack;
+haxe_ui_containers_Stack.__name__ = "haxe.ui.containers.Stack";
+haxe_ui_containers_Stack.__super__ = haxe_ui_containers_Box;
+Object.assign(haxe_ui_containers_Stack.prototype, {
+	__class__: haxe_ui_containers_Stack
+});
 class haxe_ui_containers_TabView extends haxe_ui_core_Component {
 	constructor() {
 		super();
+	}
+	removePage(index) {
+		this.behaviours.call("removePage",index);
+	}
+	removeAllPages() {
+		this.behaviours.call("removeAllPages",null);
 	}
 	registerComposite() {
 		super.registerComposite();
@@ -18894,6 +21989,38 @@ class haxe_ui_containers_TabView extends haxe_ui_core_Component {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"pageIndex");
 		return value;
 	}
+	get_selectedPage() {
+		return haxe_ui_util_Variant.toComponent(this.behaviours.get("selectedPage"));
+	}
+	set_selectedPage(value) {
+		this.behaviours.set("selectedPage",haxe_ui_util_Variant.fromComponent(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedPage");
+		return value;
+	}
+	get_tabPosition() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("tabPosition"));
+	}
+	set_tabPosition(value) {
+		this.behaviours.set("tabPosition",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"tabPosition");
+		return value;
+	}
+	get_pageCount() {
+		return haxe_ui_util_Variant.toInt(this.behaviours.get("pageCount"));
+	}
+	set_pageCount(value) {
+		this.behaviours.set("pageCount",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"pageCount");
+		return value;
+	}
+	get_closable() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("closable"));
+	}
+	set_closable(value) {
+		this.behaviours.set("closable",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"closable");
+		return value;
+	}
 	cloneComponent() {
 		let c = super.cloneComponent();
 		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
@@ -18912,7 +22039,7 @@ haxe_ui_containers_TabView.__name__ = "haxe.ui.containers.TabView";
 haxe_ui_containers_TabView.__super__ = haxe_ui_core_Component;
 Object.assign(haxe_ui_containers_TabView.prototype, {
 	__class__: haxe_ui_containers_TabView
-	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_pageIndex: "set_pageIndex",get_pageIndex: "get_pageIndex"})
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_closable: "set_closable",get_closable: "get_closable",set_pageCount: "set_pageCount",get_pageCount: "get_pageCount",set_tabPosition: "set_tabPosition",get_tabPosition: "get_tabPosition",set_selectedPage: "set_selectedPage",get_selectedPage: "get_selectedPage",set_pageIndex: "set_pageIndex",get_pageIndex: "get_pageIndex"})
 });
 class haxe_ui_containers__$TabView_Layout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -19311,8 +22438,26 @@ class haxe_ui_containers_TableView extends haxe_ui_containers_ScrollView {
 	get_itemRendererFunction() {
 		return this._itemRendererFunction;
 	}
+	set_itemRendererFunction(value) {
+		if(this._itemRendererFunction != value) {
+			this._itemRendererFunction = value;
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
+	}
 	get_itemRendererClass() {
 		return this._itemRendererClass;
+	}
+	set_itemRendererClass(value) {
+		if(this._itemRendererClass != value) {
+			this._itemRendererClass = value;
+			if(!(this._layout == null || this._layoutLocked == true)) {
+				this.invalidateComponent("layout");
+			}
+		}
+		return value;
 	}
 	get_itemRenderer() {
 		return this._itemRenderer;
@@ -19343,14 +22488,42 @@ class haxe_ui_containers_TableView extends haxe_ui_containers_ScrollView {
 	get_dataSource() {
 		return haxe_ui_util_Variant.toDataSource(this.behaviours.get("dataSource"));
 	}
+	set_dataSource(value) {
+		this.behaviours.set("dataSource",haxe_ui_util_Variant.fromDataSource(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dataSource");
+		return value;
+	}
+	get_itemWidth() {
+		return haxe_ui_util_Variant.toFloat(this.behaviours.get("itemWidth"));
+	}
+	set_itemWidth(value) {
+		this.behaviours.set("itemWidth",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"itemWidth");
+		return value;
+	}
 	get_itemHeight() {
 		return haxe_ui_util_Variant.toFloat(this.behaviours.get("itemHeight"));
+	}
+	set_itemHeight(value) {
+		this.behaviours.set("itemHeight",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"itemHeight");
+		return value;
 	}
 	get_itemCount() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("itemCount"));
 	}
+	set_itemCount(value) {
+		this.behaviours.set("itemCount",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"itemCount");
+		return value;
+	}
 	get_variableItemSize() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("variableItemSize"));
+	}
+	set_variableItemSize(value) {
+		this.behaviours.set("variableItemSize",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"variableItemSize");
+		return value;
 	}
 	get_selectedIndex() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("selectedIndex"));
@@ -19358,6 +22531,14 @@ class haxe_ui_containers_TableView extends haxe_ui_containers_ScrollView {
 	set_selectedIndex(value) {
 		this.behaviours.set("selectedIndex",haxe_ui_util_Variant.fromFloat(value));
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedIndex");
+		return value;
+	}
+	get_selectedItem() {
+		return this.behaviours.getDynamic("selectedItem");
+	}
+	set_selectedItem(value) {
+		this.behaviours.set("selectedItem",haxe_ui_util_Variant.fromDynamic(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedItem");
 		return value;
 	}
 	get_selectedIndices() {
@@ -19368,11 +22549,29 @@ class haxe_ui_containers_TableView extends haxe_ui_containers_ScrollView {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedIndices");
 		return value;
 	}
+	get_selectedItems() {
+		return haxe_ui_util_Variant.toArray(this.behaviours.get("selectedItems"));
+	}
+	set_selectedItems(value) {
+		this.behaviours.set("selectedItems",haxe_ui_util_Variant.fromArray(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectedItems");
+		return value;
+	}
 	get_selectionMode() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("selectionMode"));
 	}
+	set_selectionMode(value) {
+		this.behaviours.set("selectionMode",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selectionMode");
+		return value;
+	}
 	get_longPressSelectionTime() {
 		return haxe_ui_util_Variant.toInt(this.behaviours.get("longPressSelectionTime"));
+	}
+	set_longPressSelectionTime(value) {
+		this.behaviours.set("longPressSelectionTime",haxe_ui_util_Variant.fromFloat(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"longPressSelectionTime");
+		return value;
 	}
 	cloneComponent() {
 		let c = super.cloneComponent();
@@ -19392,6 +22591,17 @@ class haxe_ui_containers_TableView extends haxe_ui_containers_ScrollView {
 		this._compositeBuilderClass = haxe_ui_containers__$TableView_Builder;
 		this._defaultLayoutClass = haxe_ui_containers__$TableView_Layout;
 	}
+	set_onComponentEvent(value) {
+		if(this.__onComponentEvent != null) {
+			this.unregisterEvent("itemComponentEvent",this.__onComponentEvent);
+			this.__onComponentEvent = null;
+		}
+		if(value != null) {
+			this.__onComponentEvent = value;
+			this.registerEvent("itemComponentEvent",value);
+		}
+		return value;
+	}
 }
 $hxClasses["haxe.ui.containers.TableView"] = haxe_ui_containers_TableView;
 haxe_ui_containers_TableView.__name__ = "haxe.ui.containers.TableView";
@@ -19402,7 +22612,9 @@ Object.assign(haxe_ui_containers_TableView.prototype, {
 	,_itemRendererFunction: null
 	,_itemRendererClass: null
 	,_itemRenderer: null
-	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {get_longPressSelectionTime: "get_longPressSelectionTime",get_selectionMode: "get_selectionMode",set_selectedIndices: "set_selectedIndices",get_selectedIndices: "get_selectedIndices",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",get_variableItemSize: "get_variableItemSize",get_itemCount: "get_itemCount",get_itemHeight: "get_itemHeight",get_dataSource: "get_dataSource",set_itemRenderer: "set_itemRenderer",get_itemRenderer: "get_itemRenderer",get_itemRendererClass: "get_itemRendererClass",get_itemRendererFunction: "get_itemRendererFunction"})
+	,__onComponentEvent: null
+	,onComponentEvent: null
+	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {set_onComponentEvent: "set_onComponentEvent",set_longPressSelectionTime: "set_longPressSelectionTime",get_longPressSelectionTime: "get_longPressSelectionTime",set_selectionMode: "set_selectionMode",get_selectionMode: "get_selectionMode",set_selectedItems: "set_selectedItems",get_selectedItems: "get_selectedItems",set_selectedIndices: "set_selectedIndices",get_selectedIndices: "get_selectedIndices",set_selectedItem: "set_selectedItem",get_selectedItem: "get_selectedItem",set_selectedIndex: "set_selectedIndex",get_selectedIndex: "get_selectedIndex",set_variableItemSize: "set_variableItemSize",get_variableItemSize: "get_variableItemSize",set_itemCount: "set_itemCount",get_itemCount: "get_itemCount",set_itemHeight: "set_itemHeight",get_itemHeight: "get_itemHeight",set_itemWidth: "set_itemWidth",get_itemWidth: "get_itemWidth",set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_itemRenderer: "set_itemRenderer",get_itemRenderer: "get_itemRenderer",set_itemRendererClass: "set_itemRendererClass",get_itemRendererClass: "get_itemRendererClass",set_itemRendererFunction: "set_itemRendererFunction",get_itemRendererFunction: "get_itemRendererFunction"})
 });
 class haxe_ui_core_ItemRenderer extends haxe_ui_containers_Box {
 	constructor() {
@@ -20103,6 +23315,28 @@ class haxe_ui_layouts_VirtualLayout extends haxe_ui_layouts_ScrollViewLayout {
 	get_dataSource() {
 		return (js_Boot.__cast(this._component , haxe_ui_core_IDataComponent)).get_dataSource();
 	}
+	get_itemWidth() {
+		let comp = js_Boot.__cast(this._component , haxe_ui_containers_IVirtualContainer);
+		if(comp.get_itemWidth() > 0) {
+			return comp.get_itemWidth();
+		}
+		let _this = this.get_contents();
+		let childComponents = _this._children == null ? [] : _this._children;
+		let result = 0;
+		if(childComponents.length > 0) {
+			result = childComponents[0].get_width();
+			if(result <= 0) {
+				childComponents[0].syncComponentValidation();
+				result = childComponents[0].get_width();
+			}
+		}
+		if(result > 0) {
+			comp.set_itemWidth(result);
+		} else {
+			result = 1;
+		}
+		return result;
+	}
 	get_itemHeight() {
 		let comp = js_Boot.__cast(this._component , haxe_ui_containers_IVirtualContainer);
 		if(comp.get_itemHeight() > 0) {
@@ -20330,6 +23564,13 @@ class haxe_ui_layouts_VirtualLayout extends haxe_ui_layouts_ScrollViewLayout {
 			return false;
 		}
 	}
+	isIndexVisible(index) {
+		if(index >= this._firstIndex) {
+			return index <= this._lastIndex;
+		} else {
+			return false;
+		}
+	}
 }
 $hxClasses["haxe.ui.layouts.VirtualLayout"] = haxe_ui_layouts_VirtualLayout;
 haxe_ui_layouts_VirtualLayout.__name__ = "haxe.ui.layouts.VirtualLayout";
@@ -20341,10 +23582,11 @@ Object.assign(haxe_ui_layouts_VirtualLayout.prototype, {
 	,_rendererPool: null
 	,_sizeCache: null
 	,contents: null
+	,itemWidth: null
 	,itemHeight: null
 	,itemCount: null
 	,_lastItemRenderer: null
-	,__properties__: Object.assign({}, haxe_ui_layouts_ScrollViewLayout.prototype.__properties__, {get_itemCount: "get_itemCount",get_itemHeight: "get_itemHeight",get_dataSource: "get_dataSource",get_contents: "get_contents"})
+	,__properties__: Object.assign({}, haxe_ui_layouts_ScrollViewLayout.prototype.__properties__, {get_itemCount: "get_itemCount",get_itemHeight: "get_itemHeight",get_itemWidth: "get_itemWidth",get_dataSource: "get_dataSource",get_contents: "get_contents"})
 });
 class haxe_ui_layouts_VerticalVirtualLayout extends haxe_ui_layouts_VirtualLayout {
 	constructor() {
@@ -20820,7 +24062,100 @@ haxe_ui_containers__$TableView_SelectionModeBehaviour.__super__ = haxe_ui_behavi
 Object.assign(haxe_ui_containers__$TableView_SelectionModeBehaviour.prototype, {
 	__class__: haxe_ui_containers__$TableView_SelectionModeBehaviour
 });
+class haxe_ui_containers_VerticalSplitter extends haxe_ui_containers_Splitter {
+	constructor() {
+		super();
+		this.set_layoutName("vertical");
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._internalEventsClass = haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents;
+		this._compositeBuilderClass = haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_VerticalSplitter();
+	}
+}
+$hxClasses["haxe.ui.containers.VerticalSplitter"] = haxe_ui_containers_VerticalSplitter;
+haxe_ui_containers_VerticalSplitter.__name__ = "haxe.ui.containers.VerticalSplitter";
+haxe_ui_containers_VerticalSplitter.__super__ = haxe_ui_containers_Splitter;
+Object.assign(haxe_ui_containers_VerticalSplitter.prototype, {
+	__class__: haxe_ui_containers_VerticalSplitter
+});
+class haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents extends haxe_ui_containers_SplitterEvents {
+	constructor(splitter) {
+		super(splitter);
+	}
+	onGripperMouseDown(event) {
+		super.onGripperMouseDown(event);
+		window.document.body.style.cursor = "row-resize";
+	}
+	handleResize(prev,next,event) {
+		let delta = event.screenY - this._currentOffset.y;
+		let prevCY = prev.set_height(prev.get_height() + delta);
+		let nextCY = next.set_height(next.get_height() - delta);
+		let ucy = this._splitter.get_layout().get_usableHeight();
+		if(prev.get_percentHeight() != null) {
+			prev.set_percentHeight(prevCY / ucy * 100);
+		} else {
+			prev.set_height(prevCY);
+		}
+		if(next.get_percentHeight() != null) {
+			next.set_percentHeight(nextCY / ucy * 100);
+		} else {
+			next.set_height(nextCY);
+		}
+	}
+}
+$hxClasses["haxe.ui.containers._VerticalSplitter.VerticalSplitterEvents"] = haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents;
+haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents.__name__ = "haxe.ui.containers._VerticalSplitter.VerticalSplitterEvents";
+haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents.__super__ = haxe_ui_containers_SplitterEvents;
+Object.assign(haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents.prototype, {
+	__class__: haxe_ui_containers__$VerticalSplitter_VerticalSplitterEvents
+});
+class haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder extends haxe_ui_containers_SplitterBuilder {
+	constructor(splitter) {
+		super(splitter);
+	}
+	getSplitterClass() {
+		return "vertical-splitter-gripper";
+	}
+}
+$hxClasses["haxe.ui.containers._VerticalSplitter.VerticalSplitterBuilder"] = haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder;
+haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder.__name__ = "haxe.ui.containers._VerticalSplitter.VerticalSplitterBuilder";
+haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder.__super__ = haxe_ui_containers_SplitterBuilder;
+Object.assign(haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder.prototype, {
+	__class__: haxe_ui_containers__$VerticalSplitter_VerticalSplitterBuilder
+});
 class haxe_ui_containers_dialogs_DialogButton {
+	static bitOr(lhs,rhs) {
+		let larr = haxe_ui_containers_dialogs_DialogButton.toString(lhs).split("|");
+		let rarr = haxe_ui_containers_dialogs_DialogButton.toString(rhs).split("|");
+		let _g = 0;
+		while(_g < rarr.length) {
+			let r = rarr[_g];
+			++_g;
+			if(larr.indexOf(r) == -1) {
+				larr.push(r);
+			}
+		}
+		return larr.join("|");
+	}
+	static eq(lhs,rhs) {
+		return haxe_ui_containers_dialogs_DialogButton.toString(lhs).split("|").indexOf(haxe_ui_containers_dialogs_DialogButton.toString(rhs)) != -1;
+	}
 	static toArray(this1) {
 		let a = [];
 		let _g = 0;
@@ -20867,6 +24202,15 @@ Object.assign(haxe_ui_containers_dialogs_DialogEvent.prototype, {
 	__class__: haxe_ui_containers_dialogs_DialogEvent
 	,button: null
 });
+class haxe_ui_containers_dialogs_MessageBoxType {
+	static toString(this1) {
+		if(this1 == null) {
+			return "null";
+		} else {
+			return "" + this1;
+		}
+	}
+}
 class haxe_ui_containers_dialogs_MessageBox extends haxe_ui_backend_MessageBoxBase {
 	constructor() {
 		super();
@@ -21255,12 +24599,28 @@ class haxe_ui_containers_menus_MenuBar extends haxe_ui_containers_HBox {
 		this._internalEventsClass = haxe_ui_containers_menus__$MenuBar_Events;
 		this._compositeBuilderClass = haxe_ui_containers_menus__$MenuBar_Builder;
 	}
+	set_onMenuSelected(value) {
+		if(this.__onMenuSelected != null) {
+			this.unregisterEvent("menuselected",this.__onMenuSelected);
+			this.__onMenuSelected = null;
+		}
+		if(value != null) {
+			this.__onMenuSelected = value;
+			this.registerEvent("menuselected",value);
+		}
+		return value;
+	}
 	registerBehaviours() {
 		super.registerBehaviours();
 		this.behaviours.register("menuStyleNames",haxe_ui_behaviours_DefaultBehaviour);
 	}
 	get_menuStyleNames() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("menuStyleNames"));
+	}
+	set_menuStyleNames(value) {
+		this.behaviours.set("menuStyleNames",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"menuStyleNames");
+		return value;
 	}
 	cloneComponent() {
 		let c = super.cloneComponent();
@@ -21280,7 +24640,9 @@ haxe_ui_containers_menus_MenuBar.__name__ = "haxe.ui.containers.menus.MenuBar";
 haxe_ui_containers_menus_MenuBar.__super__ = haxe_ui_containers_HBox;
 Object.assign(haxe_ui_containers_menus_MenuBar.prototype, {
 	__class__: haxe_ui_containers_menus_MenuBar
-	,__properties__: Object.assign({}, haxe_ui_containers_HBox.prototype.__properties__, {get_menuStyleNames: "get_menuStyleNames"})
+	,__onMenuSelected: null
+	,onMenuSelected: null
+	,__properties__: Object.assign({}, haxe_ui_containers_HBox.prototype.__properties__, {set_menuStyleNames: "set_menuStyleNames",get_menuStyleNames: "get_menuStyleNames",set_onMenuSelected: "set_onMenuSelected"})
 });
 class haxe_ui_containers_menus__$MenuBar_Events extends haxe_ui_events_Events {
 	constructor(menubar) {
@@ -21580,6 +24942,49 @@ Object.assign(haxe_ui_containers_menus_MenuItem.prototype, {
 	__class__: haxe_ui_containers_menus_MenuItem
 	,__properties__: Object.assign({}, haxe_ui_containers_HBox.prototype.__properties__, {set_expandable: "set_expandable",get_expandable: "get_expandable",set_shortcutText: "set_shortcutText",get_shortcutText: "get_shortcutText"})
 });
+class haxe_ui_containers_menus_MenuCheckBox extends haxe_ui_containers_menus_MenuItem {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("text",haxe_ui_containers_menus__$MenuCheckBox_TextBehaviour);
+		this.behaviours.register("shortcutText",haxe_ui_containers_menus__$MenuCheckBox_ShortcutTextBehaviour);
+		this.behaviours.register("selected",haxe_ui_containers_menus__$MenuCheckBox_SelectedBehaviour);
+	}
+	get_selected() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("selected"));
+	}
+	set_selected(value) {
+		this.behaviours.set("selected",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selected");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		c.set_selected(this.get_selected());
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_menus_MenuCheckBox();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_containers_menus__$MenuCheckBox_Builder;
+	}
+}
+$hxClasses["haxe.ui.containers.menus.MenuCheckBox"] = haxe_ui_containers_menus_MenuCheckBox;
+haxe_ui_containers_menus_MenuCheckBox.__name__ = "haxe.ui.containers.menus.MenuCheckBox";
+haxe_ui_containers_menus_MenuCheckBox.__super__ = haxe_ui_containers_menus_MenuItem;
+Object.assign(haxe_ui_containers_menus_MenuCheckBox.prototype, {
+	__class__: haxe_ui_containers_menus_MenuCheckBox
+	,__properties__: Object.assign({}, haxe_ui_containers_menus_MenuItem.prototype.__properties__, {set_selected: "set_selected",get_selected: "get_selected"})
+});
 class haxe_ui_containers_menus__$MenuCheckBox_TextBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
 		super(component);
@@ -21638,6 +25043,29 @@ haxe_ui_containers_menus__$MenuCheckBox_SelectedBehaviour.__name__ = "haxe.ui.co
 haxe_ui_containers_menus__$MenuCheckBox_SelectedBehaviour.__super__ = haxe_ui_behaviours_DataBehaviour;
 Object.assign(haxe_ui_containers_menus__$MenuCheckBox_SelectedBehaviour.prototype, {
 	__class__: haxe_ui_containers_menus__$MenuCheckBox_SelectedBehaviour
+});
+class haxe_ui_containers_menus__$MenuCheckBox_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(component) {
+		super(component);
+	}
+	create() {
+		this._checkbox = new haxe_ui_components_CheckBox();
+		this._checkbox.set_styleNames("menuitem-checkbox");
+		this._checkbox.scriptAccess = false;
+		this._component.addComponent(this._checkbox);
+		let label = new haxe_ui_components_Label();
+		label.set_id("menuitem-shortcut-label");
+		label.set_styleNames("menuitem-shortcut-label");
+		label.scriptAccess = false;
+		this._component.addComponent(label);
+	}
+}
+$hxClasses["haxe.ui.containers.menus._MenuCheckBox.Builder"] = haxe_ui_containers_menus__$MenuCheckBox_Builder;
+haxe_ui_containers_menus__$MenuCheckBox_Builder.__name__ = "haxe.ui.containers.menus._MenuCheckBox.Builder";
+haxe_ui_containers_menus__$MenuCheckBox_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers_menus__$MenuCheckBox_Builder.prototype, {
+	__class__: haxe_ui_containers_menus__$MenuCheckBox_Builder
+	,_checkbox: null
 });
 class haxe_ui_containers_menus__$MenuItem_TextBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
@@ -21778,6 +25206,61 @@ haxe_ui_containers_menus__$MenuItem_Builder.__super__ = haxe_ui_core_CompositeBu
 Object.assign(haxe_ui_containers_menus__$MenuItem_Builder.prototype, {
 	__class__: haxe_ui_containers_menus__$MenuItem_Builder
 });
+class haxe_ui_containers_menus_MenuOptionBox extends haxe_ui_containers_menus_MenuItem {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("componentGroup",haxe_ui_containers_menus__$MenuOptionBox_GroupBehaviour);
+		this.behaviours.register("text",haxe_ui_containers_menus__$MenuOptionBox_TextBehaviour);
+		this.behaviours.register("shortcutText",haxe_ui_containers_menus__$MenuOptionBox_ShortcutTextBehaviour);
+		this.behaviours.register("selected",haxe_ui_containers_menus__$MenuOptionBox_SelectedBehaviour);
+	}
+	get_componentGroup() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("componentGroup"));
+	}
+	set_componentGroup(value) {
+		this.behaviours.set("componentGroup",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"componentGroup");
+		return value;
+	}
+	get_selected() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("selected"));
+	}
+	set_selected(value) {
+		this.behaviours.set("selected",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selected");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if(this.get_componentGroup() != null) {
+			c.set_componentGroup(this.get_componentGroup());
+		}
+		c.set_selected(this.get_selected());
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_menus_MenuOptionBox();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_containers_menus__$MenuOptionBox_Builder;
+	}
+}
+$hxClasses["haxe.ui.containers.menus.MenuOptionBox"] = haxe_ui_containers_menus_MenuOptionBox;
+haxe_ui_containers_menus_MenuOptionBox.__name__ = "haxe.ui.containers.menus.MenuOptionBox";
+haxe_ui_containers_menus_MenuOptionBox.__super__ = haxe_ui_containers_menus_MenuItem;
+Object.assign(haxe_ui_containers_menus_MenuOptionBox.prototype, {
+	__class__: haxe_ui_containers_menus_MenuOptionBox
+	,__properties__: Object.assign({}, haxe_ui_containers_menus_MenuItem.prototype.__properties__, {set_selected: "set_selected",get_selected: "get_selected",set_componentGroup: "set_componentGroup",get_componentGroup: "get_componentGroup"})
+});
 class haxe_ui_containers_menus__$MenuOptionBox_GroupBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
 		super(component);
@@ -21858,6 +25341,55 @@ haxe_ui_containers_menus__$MenuOptionBox_SelectedBehaviour.__super__ = haxe_ui_b
 Object.assign(haxe_ui_containers_menus__$MenuOptionBox_SelectedBehaviour.prototype, {
 	__class__: haxe_ui_containers_menus__$MenuOptionBox_SelectedBehaviour
 });
+class haxe_ui_containers_menus__$MenuOptionBox_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(component) {
+		super(component);
+	}
+	create() {
+		this._optionbox = new haxe_ui_components_OptionBox();
+		this._optionbox.set_styleNames("menuitem-optionbox");
+		this._optionbox.scriptAccess = false;
+		this._component.addComponent(this._optionbox);
+		let label = new haxe_ui_components_Label();
+		label.set_id("menuitem-shortcut-label");
+		label.set_styleNames("menuitem-shortcut-label");
+		label.scriptAccess = false;
+		this._component.addComponent(label);
+	}
+}
+$hxClasses["haxe.ui.containers.menus._MenuOptionBox.Builder"] = haxe_ui_containers_menus__$MenuOptionBox_Builder;
+haxe_ui_containers_menus__$MenuOptionBox_Builder.__name__ = "haxe.ui.containers.menus._MenuOptionBox.Builder";
+haxe_ui_containers_menus__$MenuOptionBox_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_containers_menus__$MenuOptionBox_Builder.prototype, {
+	__class__: haxe_ui_containers_menus__$MenuOptionBox_Builder
+	,_optionbox: null
+});
+class haxe_ui_containers_menus_MenuSeparator extends haxe_ui_core_Component {
+	constructor() {
+		super();
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_containers_menus_MenuSeparator();
+	}
+}
+$hxClasses["haxe.ui.containers.menus.MenuSeparator"] = haxe_ui_containers_menus_MenuSeparator;
+haxe_ui_containers_menus_MenuSeparator.__name__ = "haxe.ui.containers.menus.MenuSeparator";
+haxe_ui_containers_menus_MenuSeparator.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_containers_menus_MenuSeparator.prototype, {
+	__class__: haxe_ui_containers_menus_MenuSeparator
+});
 class haxe_ui_containers_properties_Property extends haxe_ui_containers_HBox {
 	constructor() {
 		super();
@@ -21892,6 +25424,11 @@ class haxe_ui_containers_properties_Property extends haxe_ui_containers_HBox {
 	get_dataSource() {
 		return haxe_ui_util_Variant.toDataSource(this.behaviours.get("dataSource"));
 	}
+	set_dataSource(value) {
+		this.behaviours.set("dataSource",haxe_ui_util_Variant.fromDataSource(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"dataSource");
+		return value;
+	}
 	cloneComponent() {
 		let c = super.cloneComponent();
 		if(this.get_label() != null) {
@@ -21917,7 +25454,7 @@ haxe_ui_containers_properties_Property.__interfaces__ = [haxe_ui_core_IDataCompo
 haxe_ui_containers_properties_Property.__super__ = haxe_ui_containers_HBox;
 Object.assign(haxe_ui_containers_properties_Property.prototype, {
 	__class__: haxe_ui_containers_properties_Property
-	,__properties__: Object.assign({}, haxe_ui_containers_HBox.prototype.__properties__, {get_dataSource: "get_dataSource",set_type: "set_type",get_type: "get_type",set_label: "set_label",get_label: "get_label"})
+	,__properties__: Object.assign({}, haxe_ui_containers_HBox.prototype.__properties__, {set_dataSource: "set_dataSource",get_dataSource: "get_dataSource",set_type: "set_type",get_type: "get_type",set_label: "set_label",get_label: "get_label"})
 });
 class haxe_ui_containers_properties__$Property_LabelBehaviour extends haxe_ui_behaviours_DefaultBehaviour {
 	constructor(property) {
@@ -22041,6 +25578,11 @@ class haxe_ui_containers_properties_PropertyGrid extends haxe_ui_containers_Scro
 	get_popupStyleNames() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("popupStyleNames"));
 	}
+	set_popupStyleNames(value) {
+		this.behaviours.set("popupStyleNames",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"popupStyleNames");
+		return value;
+	}
 	cloneComponent() {
 		let c = super.cloneComponent();
 		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
@@ -22064,7 +25606,7 @@ haxe_ui_containers_properties_PropertyGrid.__name__ = "haxe.ui.containers.proper
 haxe_ui_containers_properties_PropertyGrid.__super__ = haxe_ui_containers_ScrollView;
 Object.assign(haxe_ui_containers_properties_PropertyGrid.prototype, {
 	__class__: haxe_ui_containers_properties_PropertyGrid
-	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {get_popupStyleNames: "get_popupStyleNames"})
+	,__properties__: Object.assign({}, haxe_ui_containers_ScrollView.prototype.__properties__, {set_popupStyleNames: "set_popupStyleNames",get_popupStyleNames: "get_popupStyleNames"})
 });
 class haxe_ui_containers_properties__$PropertyGrid_Events extends haxe_ui_containers_ScrollViewEvents {
 	constructor(scrollview) {
@@ -22327,8 +25869,21 @@ class haxe_ui_core_ComponentClassMap {
 	constructor() {
 		this._map = new haxe_ds_StringMap();
 	}
+	getClassName(alias) {
+		return this._map.h[alias];
+	}
 	registerClassName(alias,className) {
 		this._map.h[alias] = className;
+	}
+	hasClassName(className) {
+		let k = haxe_ds_StringMap.keysIterator(this._map.h);
+		while(k.hasNext()) {
+			let k1 = k.next();
+			if(this._map.h[k1] == className) {
+				return true;
+			}
+		}
+		return false;
 	}
 	static get_instance() {
 		if(haxe_ui_core_ComponentClassMap._instance == null) {
@@ -22336,8 +25891,21 @@ class haxe_ui_core_ComponentClassMap {
 		}
 		return haxe_ui_core_ComponentClassMap._instance;
 	}
+	static get(alias) {
+		alias = StringTools.replace(alias,"-","").toLowerCase();
+		return haxe_ui_core_ComponentClassMap.get_instance().getClassName(alias);
+	}
 	static register(alias,className) {
 		haxe_ui_core_ComponentClassMap.get_instance().registerClassName(alias.toLowerCase(),className);
+	}
+	static list() {
+		return haxe_ds_StringMap.keysIterator(haxe_ui_core_ComponentClassMap.get_instance()._map.h);
+	}
+	static clear() {
+		haxe_ui_core_ComponentClassMap.get_instance()._map = new haxe_ds_StringMap();
+	}
+	static hasClass(className) {
+		return haxe_ui_core_ComponentClassMap.get_instance().hasClassName(className);
 	}
 }
 $hxClasses["haxe.ui.core.ComponentClassMap"] = haxe_ui_core_ComponentClassMap;
@@ -22364,6 +25932,16 @@ haxe_ui_core_ComponentDisabledBehaviour.__super__ = haxe_ui_behaviours_DataBehav
 Object.assign(haxe_ui_core_ComponentDisabledBehaviour.prototype, {
 	__class__: haxe_ui_core_ComponentDisabledBehaviour
 });
+class haxe_ui_core_ComponentFieldMap {
+	static mapField(name) {
+		if(Object.prototype.hasOwnProperty.call(haxe_ui_core_ComponentFieldMap.MAP.h,name)) {
+			return haxe_ui_core_ComponentFieldMap.MAP.h[name];
+		}
+		return name;
+	}
+}
+$hxClasses["haxe.ui.core.ComponentFieldMap"] = haxe_ui_core_ComponentFieldMap;
+haxe_ui_core_ComponentFieldMap.__name__ = "haxe.ui.core.ComponentFieldMap";
 class haxe_ui_core_ImageDisplay extends haxe_ui_backend_ImageDisplayImpl {
 	constructor() {
 		haxe_ui_backend_ImageSurface._hx_skip_constructor = true;
@@ -22377,6 +25955,9 @@ class haxe_ui_core_ImageDisplay extends haxe_ui_backend_ImageDisplayImpl {
 		this._invalidationFlags = new haxe_ds_StringMap();
 		super._hx_constructor();
 	}
+	get_left() {
+		return this._left;
+	}
 	set_left(value) {
 		if(value == this._left) {
 			return value;
@@ -22384,6 +25965,9 @@ class haxe_ui_core_ImageDisplay extends haxe_ui_backend_ImageDisplayImpl {
 		this._left = value;
 		this.invalidateComponent("position");
 		return value;
+	}
+	get_top() {
+		return this._top;
 	}
 	set_top(value) {
 		if(value == this._top) {
@@ -22414,6 +25998,9 @@ class haxe_ui_core_ImageDisplay extends haxe_ui_backend_ImageDisplayImpl {
 	}
 	get_imageHeight() {
 		return this._imageHeight;
+	}
+	get_imageInfo() {
+		return this._imageInfo;
 	}
 	set_imageInfo(value) {
 		if(value == this._imageInfo) {
@@ -22503,11 +26090,14 @@ Object.assign(haxe_ui_core_ImageDisplay.prototype, {
 	,_invalidationFlags: null
 	,_isAllInvalid: null
 	,_isValidating: null
-	,__properties__: {set_imageClipRect: "set_imageClipRect",get_imageClipRect: "get_imageClipRect",set_imageInfo: "set_imageInfo",set_imageHeight: "set_imageHeight",get_imageHeight: "get_imageHeight",set_imageWidth: "set_imageWidth",get_imageWidth: "get_imageWidth",set_top: "set_top",set_left: "set_left"}
+	,__properties__: {set_imageClipRect: "set_imageClipRect",get_imageClipRect: "get_imageClipRect",set_imageInfo: "set_imageInfo",get_imageInfo: "get_imageInfo",set_imageHeight: "set_imageHeight",get_imageHeight: "get_imageHeight",set_imageWidth: "set_imageWidth",get_imageWidth: "get_imageWidth",set_top: "set_top",get_top: "get_top",set_left: "set_left",get_left: "get_left"}
 });
 class haxe_ui_core_LayoutClassMap {
 	constructor() {
 		this._map = new haxe_ds_StringMap();
+	}
+	getClassName(alias) {
+		return this._map.h[alias];
 	}
 	registerClassName(alias,className) {
 		this._map.h[alias] = className;
@@ -22518,9 +26108,15 @@ class haxe_ui_core_LayoutClassMap {
 		}
 		return haxe_ui_core_LayoutClassMap._instance;
 	}
+	static get(alias) {
+		return haxe_ui_core_LayoutClassMap.get_instance().getClassName(alias);
+	}
 	static register(alias,className) {
 		haxe_ui_core_LayoutClassMap.get_instance().registerClassName(StringTools.replace(alias,"layout",""),className);
 		haxe_ui_core_LayoutClassMap.get_instance().registerClassName(alias,className);
+	}
+	static list() {
+		return haxe_ds_StringMap.keysIterator(haxe_ui_core_LayoutClassMap.get_instance()._map.h);
 	}
 }
 $hxClasses["haxe.ui.core.LayoutClassMap"] = haxe_ui_core_LayoutClassMap;
@@ -22582,6 +26178,19 @@ class haxe_ui_core_Screen extends haxe_ui_backend_ScreenImpl {
 		component.unregisterEvent("resize",$bind(this,this._onRootComponentResize));
 		return component;
 	}
+	setComponentIndex(child,index) {
+		if(index >= 0 && index <= this.rootComponents.length) {
+			this.handleSetComponentIndex(child,index);
+			HxOverrides.remove(this.rootComponents,child);
+			this.rootComponents.splice(index,0,child);
+		}
+		return child;
+	}
+	refreshStyleRootComponents() {
+		let _g = 0;
+		let _g1 = this.rootComponents;
+		while(_g < _g1.length) this._refreshStyleComponent(_g1[_g++]);
+	}
 	_refreshStyleComponent(component) {
 		let _g = 0;
 		let _g1 = component._children == null ? [] : component._children;
@@ -22596,6 +26205,18 @@ class haxe_ui_core_Screen extends haxe_ui_backend_ScreenImpl {
 	_onRootComponentResize(e) {
 		this._refreshStyleComponent(e.target);
 	}
+	messageBox(message,title,type,modal,callback) {
+		if(modal == null) {
+			modal = true;
+		}
+		return haxe_ui_Toolkit.messageBox(message,title,type,modal,callback);
+	}
+	dialog(contents,title,buttons,modal,callback) {
+		if(modal == null) {
+			modal = true;
+		}
+		return haxe_ui_Toolkit.dialog(contents,title,buttons,modal,callback);
+	}
 	invalidateAll() {
 		let _g = 0;
 		let _g1 = this.rootComponents;
@@ -22606,6 +26227,17 @@ class haxe_ui_core_Screen extends haxe_ui_backend_ScreenImpl {
 		let _g1 = c._children == null ? [] : c._children;
 		while(_g < _g1.length) this.invalidateChildren(_g1[_g++]);
 		c.invalidateComponent();
+	}
+	onThemeChanged() {
+		let _g = 0;
+		let _g1 = this.rootComponents;
+		while(_g < _g1.length) this.onThemeChangedChildren(_g1[_g++]);
+	}
+	onThemeChangedChildren(c) {
+		let _g = 0;
+		let _g1 = c._children == null ? [] : c._children;
+		while(_g < _g1.length) this.onThemeChangedChildren(_g1[_g++]);
+		c.onThemeChanged();
 	}
 	registerEvent(type,listener,priority) {
 		if(priority == null) {
@@ -22688,6 +26320,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this._textStyle = value;
 		return value;
 	}
+	get_text() {
+		return this._text;
+	}
 	set_text(value) {
 		if(value == this._text) {
 			return value;
@@ -22696,6 +26331,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this._htmlText = null;
 		this.invalidateComponent("data");
 		return value;
+	}
+	get_htmlText() {
+		return this._htmlText;
 	}
 	set_htmlText(value) {
 		if(value == this._htmlText) {
@@ -22706,6 +26344,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this.invalidateComponent("data");
 		return value;
 	}
+	get_left() {
+		return this._left;
+	}
 	set_left(value) {
 		if(value == this._left) {
 			return value;
@@ -22713,6 +26354,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this.invalidateComponent("position");
 		this._left = value;
 		return value;
+	}
+	get_top() {
+		return this._top;
 	}
 	set_top(value) {
 		if(value == this._top) {
@@ -22730,6 +26374,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this._width = value;
 		return value;
 	}
+	get_width() {
+		return this._width;
+	}
 	set_height(value) {
 		if(this._height == value) {
 			return value;
@@ -22737,6 +26384,9 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 		this.invalidateComponent("display");
 		this._height = value;
 		return value;
+	}
+	get_height() {
+		return this._height;
 	}
 	get_textWidth() {
 		if(this._text == null || this._text.length == 0) {
@@ -22752,6 +26402,20 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 			this.validateComponent();
 		}
 		return this._textHeight;
+	}
+	get_multiline() {
+		return this._displayData.multiline;
+	}
+	set_multiline(value) {
+		if(value == this._displayData.multiline) {
+			return value;
+		}
+		this.invalidateComponent("style");
+		this._displayData.multiline = value;
+		return value;
+	}
+	get_wordWrap() {
+		return this._displayData.wordWrap;
 	}
 	set_wordWrap(value) {
 		if(value == this._displayData.wordWrap) {
@@ -22792,6 +26456,15 @@ class haxe_ui_core_TextDisplay extends haxe_ui_backend_TextDisplayImpl {
 	}
 	get_depth() {
 		return this._depth;
+	}
+	set_depth(value) {
+		if(this._depth == value) {
+			return value;
+		}
+		this._depth = value;
+		return value;
+	}
+	updateComponentDisplay() {
 	}
 	validateComponent(nextFrame) {
 		if(nextFrame == null) {
@@ -22855,7 +26528,7 @@ Object.assign(haxe_ui_core_TextDisplay.prototype, {
 	,textWidth: null
 	,textHeight: null
 	,_depth: null
-	,__properties__: Object.assign({}, haxe_ui_backend_TextDisplayImpl.prototype.__properties__, {get_depth: "get_depth",set_wordWrap: "set_wordWrap",get_textHeight: "get_textHeight",get_textWidth: "get_textWidth",set_height: "set_height",set_width: "set_width",set_top: "set_top",set_left: "set_left",set_htmlText: "set_htmlText",set_text: "set_text",set_textStyle: "set_textStyle",get_textStyle: "get_textStyle"})
+	,__properties__: Object.assign({}, haxe_ui_backend_TextDisplayImpl.prototype.__properties__, {set_depth: "set_depth",get_depth: "get_depth",set_wordWrap: "set_wordWrap",get_wordWrap: "get_wordWrap",set_multiline: "set_multiline",get_multiline: "get_multiline",get_textHeight: "get_textHeight",get_textWidth: "get_textWidth",set_height: "set_height",get_height: "get_height",set_width: "set_width",get_width: "get_width",set_top: "set_top",get_top: "get_top",set_left: "set_left",get_left: "get_left",set_htmlText: "set_htmlText",get_htmlText: "get_htmlText",set_text: "set_text",get_text: "get_text",set_textStyle: "set_textStyle",get_textStyle: "get_textStyle"})
 });
 class haxe_ui_core_TextInputData {
 	constructor() {
@@ -22942,6 +26615,9 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 		this.invalidateComponent("data");
 		return value;
 	}
+	get_password() {
+		return this._inputData.password;
+	}
 	set_password(value) {
 		if(value == this._inputData.password) {
 			return value;
@@ -22950,6 +26626,9 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 		this.invalidateComponent("style");
 		return value;
 	}
+	get_left() {
+		return this._left;
+	}
 	set_left(value) {
 		if(value == this._left) {
 			return value;
@@ -22957,6 +26636,9 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 		this._left = value;
 		this.invalidateComponent("position");
 		return value;
+	}
+	get_top() {
+		return this._top;
 	}
 	set_top(value) {
 		if(value == this._top) {
@@ -23003,6 +26685,9 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 		}
 		return this._textHeight;
 	}
+	get_multiline() {
+		return this._displayData.multiline;
+	}
 	set_multiline(value) {
 		if(value == this._displayData.multiline) {
 			return value;
@@ -23010,6 +26695,9 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 		this._displayData.multiline = value;
 		this.invalidateComponent("style");
 		return value;
+	}
+	get_wordWrap() {
+		return this._displayData.wordWrap;
 	}
 	set_wordWrap(value) {
 		if(value == this._displayData.wordWrap) {
@@ -23085,6 +26773,15 @@ class haxe_ui_core_TextInput extends haxe_ui_backend_TextInputImpl {
 	get_depth() {
 		return this._depth;
 	}
+	set_depth(value) {
+		if(this._depth == value) {
+			return value;
+		}
+		this._depth = value;
+		return value;
+	}
+	updateComponentDisplay() {
+	}
 	validateComponent(nextFrame) {
 		if(nextFrame == null) {
 			nextFrame = true;
@@ -23147,13 +26844,31 @@ Object.assign(haxe_ui_core_TextInput.prototype, {
 	,vscrollMax: null
 	,vscrollPageSize: null
 	,_depth: null
-	,__properties__: Object.assign({}, haxe_ui_backend_TextInputImpl.prototype.__properties__, {get_depth: "get_depth",get_vscrollPageSize: "get_vscrollPageSize",get_vscrollMax: "get_vscrollMax",set_vscrollPos: "set_vscrollPos",get_vscrollPos: "get_vscrollPos",get_hscrollPageSize: "get_hscrollPageSize",get_hscrollMax: "get_hscrollMax",set_hscrollPos: "set_hscrollPos",get_hscrollPos: "get_hscrollPos",set_wordWrap: "set_wordWrap",set_multiline: "set_multiline",get_textHeight: "get_textHeight",get_textWidth: "get_textWidth",set_height: "set_height",get_height: "get_height",set_width: "set_width",get_width: "get_width",set_top: "set_top",set_left: "set_left",set_password: "set_password",set_text: "set_text",get_text: "get_text",get_data: "get_data",set_textStyle: "set_textStyle",get_textStyle: "get_textStyle"})
+	,__properties__: Object.assign({}, haxe_ui_backend_TextInputImpl.prototype.__properties__, {set_depth: "set_depth",get_depth: "get_depth",get_vscrollPageSize: "get_vscrollPageSize",get_vscrollMax: "get_vscrollMax",set_vscrollPos: "set_vscrollPos",get_vscrollPos: "get_vscrollPos",get_hscrollPageSize: "get_hscrollPageSize",get_hscrollMax: "get_hscrollMax",set_hscrollPos: "set_hscrollPos",get_hscrollPos: "get_hscrollPos",set_wordWrap: "set_wordWrap",get_wordWrap: "get_wordWrap",set_multiline: "set_multiline",get_multiline: "get_multiline",get_textHeight: "get_textHeight",get_textWidth: "get_textWidth",set_height: "set_height",get_height: "get_height",set_width: "set_width",get_width: "get_width",set_top: "set_top",get_top: "get_top",set_left: "set_left",get_left: "get_left",set_password: "set_password",get_password: "get_password",set_text: "set_text",get_text: "get_text",get_data: "get_data",set_textStyle: "set_textStyle",get_textStyle: "get_textStyle"})
 });
 class haxe_ui_data_DataSource {
 	constructor(transformer) {
+		this.onClear = null;
+		this.onRemove = null;
+		this.onUpdate = null;
+		this.onInsert = null;
+		this.onAdd = null;
 		this.transformer = transformer;
 		this._allowCallbacks = true;
 		this._changed = false;
+	}
+	get_allowCallbacks() {
+		return this._allowCallbacks;
+	}
+	set_allowCallbacks(value) {
+		this._allowCallbacks = value;
+		if(this._allowCallbacks == true && this._changed == true) {
+			this._changed = false;
+			if(this.onChange != null) {
+				this.onChange();
+			}
+		}
+		return value;
 	}
 	get_size() {
 		return this.handleGetSize();
@@ -23174,6 +26889,55 @@ class haxe_ui_data_DataSource {
 		}
 		return this.handleIndexOf(item);
 	}
+	add(item) {
+		let r = this.handleAddItem(item);
+		this.handleChanged();
+		if(this._allowCallbacks == true && this.onAdd != null) {
+			this.onAdd(r);
+		}
+		return r;
+	}
+	insert(index,item) {
+		let r = this.handleInsert(index,item);
+		this.handleChanged();
+		if(this._allowCallbacks == true && this.onInsert != null) {
+			this.onInsert(index,r);
+		}
+		return r;
+	}
+	remove(item) {
+		let r = this.handleRemoveItem(item);
+		this.handleChanged();
+		if(this._allowCallbacks == true && this.onRemove != null) {
+			this.onRemove(r);
+		}
+		return r;
+	}
+	update(index,item) {
+		let r = this.handleUpdateItem(index,item);
+		this.handleChanged();
+		if(this._allowCallbacks == true && this.onUpdate != null) {
+			this.onUpdate(index,r);
+		}
+		return r;
+	}
+	clear() {
+		let o = this._allowCallbacks;
+		this._allowCallbacks = false;
+		this.handleClear();
+		this._allowCallbacks = o;
+		this.handleChanged();
+		if(this._allowCallbacks == true && this.onClear != null) {
+			this.onClear();
+		}
+	}
+	handleChanged() {
+		this._changed = true;
+		if(this._allowCallbacks == true && this.onChange != null) {
+			this._changed = false;
+			this.onChange();
+		}
+	}
 	handleGetSize() {
 		return 0;
 	}
@@ -23183,6 +26947,30 @@ class haxe_ui_data_DataSource {
 	handleIndexOf(item) {
 		return 0;
 	}
+	handleAddItem(item) {
+		return null;
+	}
+	handleInsert(index,item) {
+		return null;
+	}
+	handleRemoveItem(item) {
+		return null;
+	}
+	handleClear() {
+		let cachedTransformer = this.transformer;
+		this.transformer = null;
+		while(this.get_size() > 0) this.remove(this.get(0));
+		this.transformer = cachedTransformer;
+	}
+	handleUpdateItem(index,item) {
+		return null;
+	}
+	clone() {
+		return new haxe_ui_data_DataSource();
+	}
+	static fromString(data,type) {
+		return null;
+	}
 }
 $hxClasses["haxe.ui.data.DataSource"] = haxe_ui_data_DataSource;
 haxe_ui_data_DataSource.__name__ = "haxe.ui.data.DataSource";
@@ -23191,9 +26979,14 @@ Object.assign(haxe_ui_data_DataSource.prototype, {
 	,onChange: null
 	,transformer: null
 	,_changed: null
+	,onAdd: null
+	,onInsert: null
+	,onUpdate: null
+	,onRemove: null
+	,onClear: null
 	,_allowCallbacks: null
 	,size: null
-	,__properties__: {get_size: "get_size"}
+	,__properties__: {get_size: "get_size",set_allowCallbacks: "set_allowCallbacks",get_allowCallbacks: "get_allowCallbacks"}
 });
 class haxe_ui_data_ArrayDataSource extends haxe_ui_data_DataSource {
 	constructor(transformer) {
@@ -23209,6 +27002,34 @@ class haxe_ui_data_ArrayDataSource extends haxe_ui_data_DataSource {
 	handleIndexOf(item) {
 		return this._array.indexOf(item);
 	}
+	handleAddItem(item) {
+		this._array.push(item);
+		return item;
+	}
+	handleInsert(index,item) {
+		this._array.splice(index,0,item);
+		return item;
+	}
+	handleRemoveItem(item) {
+		HxOverrides.remove(this._array,item);
+		return item;
+	}
+	handleClear() {
+		while(this._array.length > 0) this._array.pop();
+	}
+	handleUpdateItem(index,item) {
+		return this._array[index] = item;
+	}
+	clone() {
+		let c = new haxe_ui_data_ArrayDataSource();
+		c._array = this._array.slice();
+		return c;
+	}
+	static fromArray(source,transformer) {
+		let ds = new haxe_ui_data_ArrayDataSource(transformer);
+		ds._array = source;
+		return ds;
+	}
 }
 $hxClasses["haxe.ui.data.ArrayDataSource"] = haxe_ui_data_ArrayDataSource;
 haxe_ui_data_ArrayDataSource.__name__ = "haxe.ui.data.ArrayDataSource";
@@ -23216,6 +27037,57 @@ haxe_ui_data_ArrayDataSource.__super__ = haxe_ui_data_DataSource;
 Object.assign(haxe_ui_data_ArrayDataSource.prototype, {
 	__class__: haxe_ui_data_ArrayDataSource
 	,_array: null
+});
+class haxe_ui_data_DataSourceFactory {
+	constructor() {
+	}
+	create(type) {
+		return Type.createInstance(type,[]);
+	}
+	fromString(data,type) {
+		let ds = this.create(type);
+		if(StringTools.startsWith(data,"<")) {
+			let el = Xml.parse(data).firstElement().elements();
+			while(el.hasNext()) ds.add(this.xml2Object(el.next()));
+		} else if(StringTools.startsWith(data,"[")) {
+			let json = JSON.parse(StringTools.replace(data,"'","\""));
+			let _g = 0;
+			while(_g < json.length) ds.add(json[_g++]);
+		}
+		return ds;
+	}
+	xml2Object(el,addId) {
+		if(addId == null) {
+			addId = true;
+		}
+		let o = { };
+		if(addId == true) {
+			if(el.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element but found " + (el.nodeType == null ? "null" : XmlType.toString(el.nodeType)));
+			}
+			o["id"] = el.nodeName;
+		}
+		let attr = el.attributes();
+		while(attr.hasNext()) {
+			let attr1 = attr.next();
+			o[attr1] = el.get(attr1);
+		}
+		let childEl = el.elements();
+		while(childEl.hasNext()) {
+			let childEl1 = childEl.next();
+			let childObject = this.xml2Object(childEl1,false);
+			if(childEl1.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element but found " + (childEl1.nodeType == null ? "null" : XmlType.toString(childEl1.nodeType)));
+			}
+			o[childEl1.nodeName] = childObject;
+		}
+		return o;
+	}
+}
+$hxClasses["haxe.ui.data.DataSourceFactory"] = haxe_ui_data_DataSourceFactory;
+haxe_ui_data_DataSourceFactory.__name__ = "haxe.ui.data.DataSourceFactory";
+Object.assign(haxe_ui_data_DataSourceFactory.prototype, {
+	__class__: haxe_ui_data_DataSourceFactory
 });
 class haxe_ui_data_IDataItem {
 }
@@ -23257,6 +27129,15 @@ Object.assign(haxe_ui_data_transformation_NativeTypeTransformer.prototype, {
 	__class__: haxe_ui_data_transformation_NativeTypeTransformer
 });
 class haxe_ui_debug_CallStackHelper {
+	static traceCallStack() {
+		let arr = haxe_CallStack.callStack();
+		if(arr == null) {
+			haxe_Log.trace("Callstack is null!",{ fileName : "haxe/ui/debug/CallStackHelper.hx", lineNumber : 9, className : "haxe.ui.debug.CallStackHelper", methodName : "traceCallStack"});
+			return;
+		}
+		haxe_Log.trace(haxe_CallStack.toString(arr),{ fileName : "haxe/ui/debug/CallStackHelper.hx", lineNumber : 12, className : "haxe.ui.debug.CallStackHelper", methodName : "traceCallStack"});
+		haxe_Log.trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>> END >>>>>>>>>>>>>>>>>>>>>>>>>>>>",{ fileName : "haxe/ui/debug/CallStackHelper.hx", lineNumber : 13, className : "haxe.ui.debug.CallStackHelper", methodName : "traceCallStack"});
+	}
 	static traceExceptionStack() {
 		let arr = haxe_CallStack.exceptionStack();
 		if(arr == null) {
@@ -23265,6 +27146,13 @@ class haxe_ui_debug_CallStackHelper {
 		}
 		haxe_Log.trace(haxe_CallStack.toString(arr),{ fileName : "haxe/ui/debug/CallStackHelper.hx", lineNumber : 22, className : "haxe.ui.debug.CallStackHelper", methodName : "traceExceptionStack"});
 		haxe_Log.trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>> END >>>>>>>>>>>>>>>>>>>>>>>>>>>>",{ fileName : "haxe/ui/debug/CallStackHelper.hx", lineNumber : 23, className : "haxe.ui.debug.CallStackHelper", methodName : "traceExceptionStack"});
+	}
+	static getCallStackString() {
+		let arr = haxe_CallStack.callStack();
+		if(arr == null) {
+			throw haxe_Exception.thrown("Callstack is null!");
+		}
+		return haxe_CallStack.toString(arr);
 	}
 }
 $hxClasses["haxe.ui.debug.CallStackHelper"] = haxe_ui_debug_CallStackHelper;
@@ -23583,6 +27471,10 @@ class haxe_ui_focus_FocusManager {
 	pushView(component) {
 		this._views.push(component);
 	}
+	popView() {
+		let c = this._views.pop();
+		this._focusInfo.remove(c);
+	}
 	get_focusInfo() {
 		if(this._views.length == 0) {
 			return null;
@@ -23595,6 +27487,12 @@ class haxe_ui_focus_FocusManager {
 			this._focusInfo.set(c,info);
 		}
 		return info;
+	}
+	get_focus() {
+		if(this.get_focusInfo() == null) {
+			return null;
+		}
+		return this.get_focusInfo().currentFocus;
 	}
 	set_focus(value) {
 		if(value != null && js_Boot.__implements(value,haxe_ui_focus_IFocusable) == false) {
@@ -23686,7 +27584,7 @@ Object.assign(haxe_ui_focus_FocusManager.prototype, {
 	,_views: null
 	,_focusInfo: null
 	,focusInfo: null
-	,__properties__: {set_focus: "set_focus",get_focusInfo: "get_focusInfo"}
+	,__properties__: {set_focus: "set_focus",get_focus: "get_focus",get_focusInfo: "get_focusInfo"}
 });
 class haxe_ui_geom_Point {
 	constructor(x,y) {
@@ -23729,8 +27627,52 @@ class haxe_ui_geom_Rectangle {
 	get_right() {
 		return this.left + this.width;
 	}
+	set_right(value) {
+		this.width = value - this.left;
+		return value;
+	}
 	get_bottom() {
 		return this.top + this.height;
+	}
+	set_bottom(value) {
+		this.height = value - this.top;
+		return value;
+	}
+	inflate(dx,dy) {
+		this.left -= dx;
+		this.width += dx * 2;
+		this.top -= dy;
+		this.height += dy * 2;
+	}
+	containsPoint(x,y) {
+		if(x >= this.left && x < this.left + this.width && y >= this.top && y < this.top + this.height) {
+			return true;
+		}
+		return false;
+	}
+	containsRect(rect) {
+		if(rect.width <= 0 || rect.height <= 0) {
+			if(rect.left > this.left && rect.top > this.top && rect.get_right() < this.get_right()) {
+				return rect.get_bottom() < this.get_bottom();
+			} else {
+				return false;
+			}
+		} else if(rect.left >= this.left && rect.top >= this.top && rect.get_right() <= this.get_right()) {
+			return rect.get_bottom() <= this.get_bottom();
+		} else {
+			return false;
+		}
+	}
+	intersects(rect) {
+		let x0 = this.left < rect.left ? rect.left : this.left;
+		if((this.get_right() > rect.get_right() ? rect.get_right() : this.get_right()) <= x0) {
+			return false;
+		}
+		let y0 = this.top < rect.top ? rect.top : this.top;
+		return (this.get_bottom() > rect.get_bottom() ? rect.get_bottom() : this.get_bottom()) > y0;
+	}
+	toString() {
+		return "{left: " + this.left + ", top: " + this.top + ", bottom: " + this.get_bottom() + ", right: " + this.get_right() + ", width: " + this.width + ", height: " + this.height + "}";
 	}
 }
 $hxClasses["haxe.ui.geom.Rectangle"] = haxe_ui_geom_Rectangle;
@@ -23741,7 +27683,7 @@ Object.assign(haxe_ui_geom_Rectangle.prototype, {
 	,top: null
 	,width: null
 	,height: null
-	,__properties__: {get_bottom: "get_bottom",get_right: "get_right"}
+	,__properties__: {set_bottom: "set_bottom",get_bottom: "get_bottom",set_right: "set_right",get_right: "get_right"}
 });
 class haxe_ui_geom_Size {
 	constructor(width,height) {
@@ -23753,6 +27695,13 @@ class haxe_ui_geom_Size {
 		}
 		this.width = width;
 		this.height = height;
+	}
+	round() {
+		this.width = Math.round(this.width);
+		this.height = Math.round(this.height);
+	}
+	toString() {
+		return "[" + this.width + "x" + this.height + "]";
 	}
 }
 $hxClasses["haxe.ui.geom.Size"] = haxe_ui_geom_Size;
@@ -23998,6 +27947,19 @@ class haxe_ui_layouts_HorizontalGridLayout extends haxe_ui_layouts_Layout {
 	}
 	get_rows() {
 		return this._rows;
+	}
+	set_rows(value) {
+		if(this._rows == value) {
+			return value;
+		}
+		this._rows = value;
+		if(this._component != null) {
+			let _this = this._component;
+			if(!(_this._layout == null || _this._layoutLocked == true)) {
+				_this.invalidateComponent("layout");
+			}
+		}
+		return value;
 	}
 	get_usableSize() {
 		let size = super.get_usableSize();
@@ -24316,7 +28278,7 @@ haxe_ui_layouts_HorizontalGridLayout.__super__ = haxe_ui_layouts_Layout;
 Object.assign(haxe_ui_layouts_HorizontalGridLayout.prototype, {
 	__class__: haxe_ui_layouts_HorizontalGridLayout
 	,_rows: null
-	,__properties__: Object.assign({}, haxe_ui_layouts_Layout.prototype.__properties__, {get_rows: "get_rows"})
+	,__properties__: Object.assign({}, haxe_ui_layouts_Layout.prototype.__properties__, {set_rows: "set_rows",get_rows: "get_rows"})
 });
 class haxe_ui_layouts_LayoutFactory {
 	static createFromName(name) {
@@ -24403,6 +28365,537 @@ haxe_ui_layouts_VerticalLayout.__name__ = "haxe.ui.layouts.VerticalLayout";
 haxe_ui_layouts_VerticalLayout.__super__ = haxe_ui_layouts_DefaultLayout;
 Object.assign(haxe_ui_layouts_VerticalLayout.prototype, {
 	__class__: haxe_ui_layouts_VerticalLayout
+});
+class haxe_ui_macros_BackendMacros {
+}
+$hxClasses["haxe.ui.macros.BackendMacros"] = haxe_ui_macros_BackendMacros;
+haxe_ui_macros_BackendMacros.__name__ = "haxe.ui.macros.BackendMacros";
+class haxe_ui_macros_ModuleMacros {
+}
+$hxClasses["haxe.ui.macros.ModuleMacros"] = haxe_ui_macros_ModuleMacros;
+haxe_ui_macros_ModuleMacros.__name__ = "haxe.ui.macros.ModuleMacros";
+class haxe_ui_macros_NativeMacros {
+}
+$hxClasses["haxe.ui.macros.NativeMacros"] = haxe_ui_macros_NativeMacros;
+haxe_ui_macros_NativeMacros.__name__ = "haxe.ui.macros.NativeMacros";
+class haxe_ui_parsers_ui_ComponentInfo {
+	constructor() {
+		this.properties = new haxe_ds_StringMap();
+		this.children = [];
+		this.scriptlets = [];
+		this.styles = [];
+	}
+	get_styleString() {
+		if(this.style == null) {
+			return null;
+		}
+		return StringTools.replace(this.style,"\"","'");
+	}
+	get_dataString() {
+		if(this.data == null) {
+			return null;
+		}
+		return StringTools.replace(this.data,"\"","'");
+	}
+	findRootComponent() {
+		let r = this;
+		while(r.parent != null) r = r.parent;
+		return r;
+	}
+	validate() {
+		let propsToRemove = [];
+		if(this.layoutName != null && this.layout == null) {
+			this.layout = new haxe_ui_parsers_ui_LayoutInfo();
+			this.layout.type = this.layoutName;
+			let propName = haxe_ds_StringMap.keysIterator(this.properties.h);
+			while(propName.hasNext()) {
+				let propName1 = propName.next();
+				if(StringTools.startsWith(propName1,"layout")) {
+					let propValue = this.properties.h[propName1];
+					propsToRemove.push(propName1);
+					propName1 = StringTools.replace(propName1,"layout","");
+					propName1 = haxe_ui_util_StringUtil.uncapitalizeFirstLetter(propName1);
+					this.layout.properties.h[propName1] = propValue;
+				}
+			}
+		}
+		let _g = 0;
+		while(_g < propsToRemove.length) {
+			let propName = propsToRemove[_g];
+			++_g;
+			let _this = this.properties;
+			if(Object.prototype.hasOwnProperty.call(_this.h,propName)) {
+				delete(_this.h[propName]);
+			}
+		}
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.ComponentInfo"] = haxe_ui_parsers_ui_ComponentInfo;
+haxe_ui_parsers_ui_ComponentInfo.__name__ = "haxe.ui.parsers.ui.ComponentInfo";
+Object.assign(haxe_ui_parsers_ui_ComponentInfo.prototype, {
+	__class__: haxe_ui_parsers_ui_ComponentInfo
+	,type: null
+	,id: null
+	,left: null
+	,top: null
+	,width: null
+	,height: null
+	,percentWidth: null
+	,percentHeight: null
+	,contentWidth: null
+	,contentHeight: null
+	,percentContentWidth: null
+	,percentContentHeight: null
+	,text: null
+	,style: null
+	,styleNames: null
+	,composite: null
+	,layoutName: null
+	,direction: null
+	,properties: null
+	,parent: null
+	,children: null
+	,layout: null
+	,scriptlets: null
+	,styles: null
+	,data: null
+	,condition: null
+	,__properties__: {get_dataString: "get_dataString",get_styleString: "get_styleString"}
+});
+class haxe_ui_parsers_ui_ComponentParser {
+	constructor() {
+	}
+	parse(data,resourceResolver) {
+		throw haxe_Exception.thrown("Component parser not implemented!");
+	}
+	static get(extension) {
+		haxe_ui_parsers_ui_ComponentParser.defaultParsers();
+		let cls = haxe_ui_parsers_ui_ComponentParser._parsers.h[extension];
+		if(cls == null) {
+			throw haxe_Exception.thrown("No component parser found for \"" + extension + "\"");
+		}
+		let instance = Type.createInstance(cls,[]);
+		if(instance == null) {
+			throw haxe_Exception.thrown("Could not create component parser instance \"" + Std.string(cls) + "\"");
+		}
+		return instance;
+	}
+	static defaultParsers() {
+		if(haxe_ui_parsers_ui_ComponentParser._parsers == null) {
+			haxe_ui_parsers_ui_ComponentParser.register("xml",haxe_ui_parsers_ui_XMLParser);
+		}
+	}
+	static register(extension,cls) {
+		if(haxe_ui_parsers_ui_ComponentParser._parsers == null) {
+			haxe_ui_parsers_ui_ComponentParser._parsers = new haxe_ds_StringMap();
+		}
+		haxe_ui_parsers_ui_ComponentParser._parsers.h[extension] = cls;
+	}
+	static nextId(prefix) {
+		if(prefix == null) {
+			prefix = "component";
+		}
+		let s = prefix + haxe_ui_parsers_ui_ComponentParser._nextId;
+		haxe_ui_parsers_ui_ComponentParser._nextId++;
+		return s;
+	}
+	static float(value) {
+		return parseFloat(value);
+	}
+	static isPercentage(value) {
+		if(value.indexOf("%") == value.length - 1) {
+			return true;
+		}
+		return false;
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.ComponentParser"] = haxe_ui_parsers_ui_ComponentParser;
+haxe_ui_parsers_ui_ComponentParser.__name__ = "haxe.ui.parsers.ui.ComponentParser";
+Object.assign(haxe_ui_parsers_ui_ComponentParser.prototype, {
+	__class__: haxe_ui_parsers_ui_ComponentParser
+	,_resourceResolver: null
+});
+class haxe_ui_parsers_ui_ComponentStyleInfo {
+	constructor(style,scope) {
+		if(scope == null) {
+			scope = "global";
+		}
+		this.style = null;
+		this.scope = "global";
+		this.style = style;
+		this.scope = scope;
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.ComponentStyleInfo"] = haxe_ui_parsers_ui_ComponentStyleInfo;
+haxe_ui_parsers_ui_ComponentStyleInfo.__name__ = "haxe.ui.parsers.ui.ComponentStyleInfo";
+Object.assign(haxe_ui_parsers_ui_ComponentStyleInfo.prototype, {
+	__class__: haxe_ui_parsers_ui_ComponentStyleInfo
+	,scope: null
+	,style: null
+});
+class haxe_ui_parsers_ui_LayoutInfo {
+	constructor() {
+		this.properties = new haxe_ds_StringMap();
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.LayoutInfo"] = haxe_ui_parsers_ui_LayoutInfo;
+haxe_ui_parsers_ui_LayoutInfo.__name__ = "haxe.ui.parsers.ui.LayoutInfo";
+Object.assign(haxe_ui_parsers_ui_LayoutInfo.prototype, {
+	__class__: haxe_ui_parsers_ui_LayoutInfo
+	,type: null
+	,properties: null
+});
+class haxe_ui_parsers_ui_XMLParser extends haxe_ui_parsers_ui_ComponentParser {
+	constructor() {
+		super();
+	}
+	parse(data,resourceResolver) {
+		this._resourceResolver = resourceResolver;
+		let component = new haxe_ui_parsers_ui_ComponentInfo();
+		haxe_ui_parsers_ui_XMLParser.parseComponent(component,Xml.parse(data).firstElement(),resourceResolver);
+		return component;
+	}
+	static parseComponent(component,xml,resourceResolver) {
+		let isComponent = false;
+		if(xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		let nodeName = xml.nodeName;
+		if(nodeName == "import") {
+			haxe_ui_parsers_ui_XMLParser.parseImportNode(component.parent,xml,resourceResolver);
+		} else if(nodeName == "script") {
+			haxe_ui_parsers_ui_XMLParser.parseScriptNode(component,xml,resourceResolver);
+		} else if(nodeName == "style") {
+			haxe_ui_parsers_ui_XMLParser.parseStyleNode(component,xml,resourceResolver);
+		} else if(nodeName == "data") {
+			if(xml.firstElement() != null) {
+				let tmp = haxe_xml_Printer.print(xml);
+				component.parent.data = StringTools.trim(tmp);
+			} else {
+				if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+				}
+				let _this = xml.children[0];
+				if(_this.nodeType == Xml.Document || _this.nodeType == Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, unexpected " + (_this.nodeType == null ? "null" : XmlType.toString(_this.nodeType)));
+				}
+				if(StringTools.startsWith(StringTools.trim(_this.nodeValue),"[")) {
+					if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+						throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+					}
+					let _this = xml.children[0];
+					if(_this.nodeType == Xml.Document || _this.nodeType == Xml.Element) {
+						throw haxe_Exception.thrown("Bad node type, unexpected " + (_this.nodeType == null ? "null" : XmlType.toString(_this.nodeType)));
+					}
+					component.parent.data = StringTools.trim(_this.nodeValue);
+				}
+			}
+		} else if(nodeName == "layout") {
+			haxe_ui_parsers_ui_XMLParser.parseLayoutNode(component.parent,xml);
+		} else {
+			haxe_ui_parsers_ui_XMLParser.parseDetails(component,xml);
+			haxe_ui_parsers_ui_XMLParser.parseAttributes(component,xml);
+			let childXml = xml.elements();
+			while(childXml.hasNext()) {
+				let childXml1 = childXml.next();
+				let child = new haxe_ui_parsers_ui_ComponentInfo();
+				child.parent = component;
+				if(haxe_ui_parsers_ui_XMLParser.parseComponent(child,childXml1,resourceResolver) == true) {
+					component.children.push(child);
+				}
+			}
+			if(component.type == "itemrenderer" && component.parent != null) {
+				component.parent.properties.h["native"] = "false";
+			}
+			component.validate();
+			isComponent = true;
+		}
+		return isComponent;
+	}
+	static parseImportNode(component,xml,resourceResolver) {
+		if(xml.get("source") != null || xml.get("resource") != null) {
+			let source = xml.get("source");
+			if(source == null) {
+				source = xml.get("resource");
+			}
+			let sourceData = resourceResolver.getResourceData(source);
+			if(sourceData != null) {
+				let c = haxe_ui_parsers_ui_ComponentParser.get(resourceResolver.extension(source)).parse(sourceData,resourceResolver);
+				component.findRootComponent().styles = component.findRootComponent().styles.concat(c.styles);
+				c.styles = [];
+				component.findRootComponent().scriptlets = component.findRootComponent().scriptlets.concat(c.scriptlets);
+				c.scriptlets = [];
+				c.parent = component;
+				component.children.push(c);
+			}
+		}
+	}
+	static parseScriptNode(component,xml,resourceResolver) {
+		let scriptText = null;
+		if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		if(xml.children[0] != null) {
+			if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+			}
+			let _this = xml.children[0];
+			if(_this.nodeType == Xml.Document || _this.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (_this.nodeType == null ? "null" : XmlType.toString(_this.nodeType)));
+			}
+			scriptText = _this.nodeValue;
+		}
+		if(xml.get("source") != null) {
+			let sourceData = resourceResolver.getResourceData(xml.get("source"));
+			if(sourceData != null) {
+				if(scriptText == null) {
+					scriptText = "";
+				}
+				scriptText += "\n" + sourceData;
+			}
+		}
+		if(scriptText != null) {
+			component.findRootComponent().scriptlets.push(scriptText);
+		}
+	}
+	static parseStyleNode(component,xml,resourceResolver) {
+		let styleText = null;
+		if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		if(xml.children[0] != null) {
+			if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+			}
+			let _this = xml.children[0];
+			if(_this.nodeType == Xml.Document || _this.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (_this.nodeType == null ? "null" : XmlType.toString(_this.nodeType)));
+			}
+			styleText = _this.nodeValue;
+		}
+		if(xml.get("source") != null) {
+			let sourceData = resourceResolver.getResourceData(xml.get("source"));
+			if(sourceData != null) {
+				if(styleText == null) {
+					styleText = "";
+				}
+				styleText += "\n" + sourceData;
+			}
+		}
+		if(styleText != null) {
+			let scope = xml.get("scope");
+			if(scope == null) {
+				scope = "global";
+			}
+			if(scope == "global") {
+				component.findRootComponent().styles.push(new haxe_ui_parsers_ui_ComponentStyleInfo(styleText,scope));
+			} else if(scope == "local" && component.parent != null) {
+				component.parent.styles.push(new haxe_ui_parsers_ui_ComponentStyleInfo(styleText,scope));
+			}
+		}
+	}
+	static parseLayoutNode(component,xml) {
+		let layoutXml = xml.firstElement();
+		let layout = new haxe_ui_parsers_ui_LayoutInfo();
+		component.layout = layout;
+		if(layoutXml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (layoutXml.nodeType == null ? "null" : XmlType.toString(layoutXml.nodeType)));
+		}
+		layout.type = layoutXml.nodeName;
+		let attrName = layoutXml.attributes();
+		while(attrName.hasNext()) {
+			let attrName1 = attrName.next();
+			let attrValue = layoutXml.get(attrName1);
+			layout.properties.h[attrName1] = attrValue;
+		}
+	}
+	static parseDetails(component,xml) {
+		let tmp;
+		if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		if(xml.children[0] != null) {
+			if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+			}
+			let tmp1 = xml.children[0].nodeType;
+			tmp = "" + (tmp1 == null ? "null" : XmlType.toString(tmp1)) == "1";
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			if(xml.nodeType != Xml.Document && xml.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+			}
+			let _this = xml.children[0];
+			if(_this.nodeType == Xml.Document || _this.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (_this.nodeType == null ? "null" : XmlType.toString(_this.nodeType)));
+			}
+			let value = StringTools.trim(_this.nodeValue);
+			if(value != null && value.length > 0) {
+				component.text = value;
+			}
+		}
+		if(xml.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element but found " + (xml.nodeType == null ? "null" : XmlType.toString(xml.nodeType)));
+		}
+		component.type = StringTools.replace(xml.nodeName.toLowerCase(),"-","");
+	}
+	static parseAttributes(component,xml) {
+		let attrName = xml.attributes();
+		while(attrName.hasNext()) {
+			let attrName1 = attrName.next();
+			let attrValue = xml.get(attrName1);
+			switch(attrName1) {
+			case "composite":
+				component.composite = attrValue == "true";
+				break;
+			case "condition":
+				component.condition = attrValue;
+				break;
+			case "contentHeight":
+				if(haxe_ui_parsers_ui_ComponentParser.isPercentage(attrValue) == true) {
+					component.percentContentHeight = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				} else {
+					component.contentHeight = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				}
+				break;
+			case "contentWidth":
+				if(haxe_ui_parsers_ui_ComponentParser.isPercentage(attrValue) == true) {
+					component.percentContentWidth = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				} else {
+					component.contentWidth = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				}
+				break;
+			case "direction":
+				component.direction = attrValue;
+				break;
+			case "height":
+				if(haxe_ui_parsers_ui_ComponentParser.isPercentage(attrValue) == true) {
+					component.percentHeight = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				} else {
+					component.height = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				}
+				break;
+			case "id":
+				component.id = attrValue;
+				break;
+			case "if":
+				let condition = [];
+				let _g = 0;
+				let _g1 = attrValue.split(",");
+				while(_g < _g1.length) condition.push("backend == \"" + StringTools.trim(_g1[_g++]) + "\"");
+				component.condition = condition.join(" || ");
+				break;
+			case "layout":
+				component.layoutName = attrValue;
+				break;
+			case "left":
+				component.left = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				break;
+			case "style":
+				component.style = attrValue;
+				break;
+			case "styleName":case "styleNames":
+				component.styleNames = attrValue;
+				break;
+			case "text":
+				component.text = attrValue;
+				break;
+			case "top":
+				component.top = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				break;
+			case "unless":
+				let condition1 = [];
+				let _g2 = 0;
+				let _g3 = attrValue.split(",");
+				while(_g2 < _g3.length) condition1.push("backend != \"" + StringTools.trim(_g3[_g2++]) + "\"");
+				component.condition = condition1.join(" && ");
+				break;
+			case "width":
+				if(haxe_ui_parsers_ui_ComponentParser.isPercentage(attrValue) == true) {
+					component.percentWidth = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				} else {
+					component.width = haxe_ui_parsers_ui_ComponentParser.float(attrValue);
+				}
+				break;
+			default:
+				component.properties.h[attrName1] = attrValue;
+			}
+		}
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.XMLParser"] = haxe_ui_parsers_ui_XMLParser;
+haxe_ui_parsers_ui_XMLParser.__name__ = "haxe.ui.parsers.ui.XMLParser";
+haxe_ui_parsers_ui_XMLParser.__super__ = haxe_ui_parsers_ui_ComponentParser;
+Object.assign(haxe_ui_parsers_ui_XMLParser.prototype, {
+	__class__: haxe_ui_parsers_ui_XMLParser
+});
+class haxe_ui_parsers_ui_resolvers_ResourceResolver {
+	constructor(params) {
+		this._params = params;
+	}
+	getResourceData(r) {
+		return null;
+	}
+	extension(path) {
+		if(path.indexOf(".") == -1) {
+			return null;
+		}
+		let arr = path.split(".");
+		return arr[arr.length - 1];
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.resolvers.ResourceResolver"] = haxe_ui_parsers_ui_resolvers_ResourceResolver;
+haxe_ui_parsers_ui_resolvers_ResourceResolver.__name__ = "haxe.ui.parsers.ui.resolvers.ResourceResolver";
+Object.assign(haxe_ui_parsers_ui_resolvers_ResourceResolver.prototype, {
+	__class__: haxe_ui_parsers_ui_resolvers_ResourceResolver
+	,_params: null
+});
+class haxe_ui_parsers_ui_resolvers_AssetResourceResolver extends haxe_ui_parsers_ui_resolvers_ResourceResolver {
+	constructor(rootFile,params) {
+		super(params);
+		this._rootFile = rootFile;
+		let arr = this._rootFile.split("/");
+		arr.pop();
+		this._rootDir = arr.join("/");
+		if(arr.length > 1) {
+			this._rootDir += "/";
+		}
+	}
+	getResourceData(r) {
+		let f = haxe_io_Path.normalize(this._rootDir + r);
+		return haxe_ui_ToolkitAssets.get_instance().getText(f);
+	}
+}
+$hxClasses["haxe.ui.parsers.ui.resolvers.AssetResourceResolver"] = haxe_ui_parsers_ui_resolvers_AssetResourceResolver;
+haxe_ui_parsers_ui_resolvers_AssetResourceResolver.__name__ = "haxe.ui.parsers.ui.resolvers.AssetResourceResolver";
+haxe_ui_parsers_ui_resolvers_AssetResourceResolver.__super__ = haxe_ui_parsers_ui_resolvers_ResourceResolver;
+Object.assign(haxe_ui_parsers_ui_resolvers_AssetResourceResolver.prototype, {
+	__class__: haxe_ui_parsers_ui_resolvers_AssetResourceResolver
+	,_rootFile: null
+	,_rootDir: null
+});
+class haxe_ui_scripting_ConditionEvaluator {
+	constructor() {
+	}
+	evaluate(condition) {
+		if(haxe_ui_scripting_ConditionEvaluator._parser == null) {
+			haxe_ui_scripting_ConditionEvaluator._parser = new hscript_Parser();
+		}
+		if(haxe_ui_scripting_ConditionEvaluator._interp == null) {
+			haxe_ui_scripting_ConditionEvaluator._interp = new hscript_Interp();
+		}
+		haxe_ui_scripting_ConditionEvaluator._interp.variables.h["Backend"] = haxe_ui_Backend;
+		haxe_ui_scripting_ConditionEvaluator._interp.variables.h["backend"] = haxe_ui_Backend.get_id();
+		let program = haxe_ui_scripting_ConditionEvaluator._parser.parseString(condition);
+		return haxe_ui_scripting_ConditionEvaluator._interp.execute(program);
+	}
+}
+$hxClasses["haxe.ui.scripting.ConditionEvaluator"] = haxe_ui_scripting_ConditionEvaluator;
+haxe_ui_scripting_ConditionEvaluator.__name__ = "haxe.ui.scripting.ConditionEvaluator";
+Object.assign(haxe_ui_scripting_ConditionEvaluator.prototype, {
+	__class__: haxe_ui_scripting_ConditionEvaluator
 });
 class hscript_Interp {
 	constructor() {
@@ -24706,6 +29199,19 @@ class hscript_Interp {
 			let d = this.declared.pop();
 			this.locals.h[d.n] = d.old;
 		}
+	}
+	error(e,rethrow) {
+		if(rethrow == null) {
+			rethrow = false;
+		}
+		if(rethrow) {
+			throw haxe_Exception.thrown(e);
+		} else {
+			throw haxe_Exception.thrown(e);
+		}
+	}
+	rethrow(e) {
+		throw haxe_Exception.thrown(e);
 	}
 	resolve(id) {
 		let l = this.locals.h[id];
@@ -25147,6 +29653,15 @@ class hscript_Interp {
 			}
 		}
 		this.restore(old);
+	}
+	isMap(o) {
+		return js_Boot.__implements(o,haxe_IMap);
+	}
+	getMapValue(map,key) {
+		return (js_Boot.__cast(map , haxe_IMap)).get(key);
+	}
+	setMapValue(map,key,value) {
+		(js_Boot.__cast(map , haxe_IMap)).set(key,value);
 	}
 	get(o,f) {
 		if(o == null) {
@@ -26295,6 +30810,11 @@ class haxe_ui_styles_Style {
 		}
 		return true;
 	}
+	createAnimationOptions() {
+		if(this.animationOptions == null) {
+			this.animationOptions = new haxe_ui_styles_animation_AnimationOptions(null,null,null,null,null,null);
+		}
+	}
 }
 $hxClasses["haxe.ui.styles.Style"] = haxe_ui_styles_Style;
 haxe_ui_styles_Style.__name__ = "haxe.ui.styles.Style";
@@ -26409,6 +30929,24 @@ class haxe_ui_styles_StyleSheet {
 			}
 		}
 		return r;
+	}
+	findRule(selector) {
+		let _g = 0;
+		let _g1 = this.get_rules();
+		while(_g < _g1.length) {
+			let r = _g1[_g];
+			++_g;
+			if(r.selector.toString() == selector) {
+				return r;
+			}
+		}
+		return null;
+	}
+	removeRule(selector) {
+		let r = this.findRule(selector);
+		if(r != null) {
+			HxOverrides.remove(this._rules,r);
+		}
 	}
 	removeAllRules() {
 		this._rules = [];
@@ -26555,6 +31093,16 @@ class haxe_ui_styles_ValueTools {
 			}
 		}
 		return v;
+	}
+	static compositeParts(value) {
+		if(value == null) {
+			return 0;
+		}
+		if(value._hx_index == 7) {
+			return value.vl.length;
+		} else {
+			return 0;
+		}
 	}
 	static composite(value) {
 		if(value == null) {
@@ -27361,6 +31909,11 @@ class haxe_ui_styles_animation_util_Actuator {
 			this._onComplete();
 		}
 	}
+	static tween(target,properties,duration,options) {
+		let actuator = new haxe_ui_styles_animation_util_Actuator(target,properties,duration,options);
+		actuator.run();
+		return actuator;
+	}
 }
 $hxClasses["haxe.ui.styles.animation.util.Actuator"] = haxe_ui_styles_animation_util_Actuator;
 haxe_ui_styles_animation_util_Actuator.__name__ = "haxe.ui.styles.animation.util.Actuator";
@@ -27518,6 +32071,9 @@ class haxe_ui_styles_elements_MediaQuery {
 		this._directives = directives;
 		this._styleSheet = styleSheet;
 	}
+	addDirective(el) {
+		this._directives.push(el);
+	}
 	get_relevant() {
 		let b = true;
 		let _g = 0;
@@ -27586,6 +32142,9 @@ class haxe_ui_styles_elements_RuleElement {
 		this.selector = new haxe_ui_styles_elements_Selector(selector);
 		let _g = 0;
 		while(_g < directives.length) this.processDirective(directives[_g++]);
+	}
+	addDirective(directive,value) {
+		this.processDirective(new haxe_ui_styles_elements_Directive(directive,value));
 	}
 	match(d) {
 		return haxe_ui_styles_elements_RuleElement.ruleMatch(this.selector.parts[this.selector.parts.length - 1],d);
@@ -27824,6 +32383,9 @@ class haxe_ui_styles_elements_Selector {
 			parent = current;
 		}
 	}
+	toString() {
+		return this.parts.join(" ");
+	}
 }
 $hxClasses["haxe.ui.styles.elements.Selector"] = haxe_ui_styles_elements_Selector;
 haxe_ui_styles_elements_Selector.__name__ = "haxe.ui.styles.elements.Selector";
@@ -27848,6 +32410,22 @@ class haxe_ui_styles_elements_SelectorPart {
 			this._parts = this.className.split(".");
 		}
 		return this._parts;
+	}
+	toString() {
+		let sb_b = "";
+		if(this.id != null) {
+			sb_b = "" + Std.string("#" + this.id);
+		}
+		if(this.nodeName != null) {
+			sb_b += Std.string(this.nodeName);
+		}
+		if(this.className != null) {
+			sb_b += Std.string("." + this.className);
+		}
+		if(this.pseudoClass != null) {
+			sb_b += Std.string(":" + this.pseudoClass);
+		}
+		return sb_b;
 	}
 }
 $hxClasses["haxe.ui.styles.elements.SelectorPart"] = haxe_ui_styles_elements_SelectorPart;
@@ -27992,6 +32570,14 @@ class haxe_ui_util_CallbackMap {
 			}
 		}
 	}
+	invoke(key,param) {
+		let arr = this._map.h[key];
+		if(arr != null) {
+			arr = arr.copy();
+			let listener = arr.iterator();
+			while(listener.hasNext()) listener.next().callback(param);
+		}
+	}
 	invokeAndRemove(key,param) {
 		let arr = this._map.h[key];
 		if(arr != null) {
@@ -28017,10 +32603,139 @@ Object.assign(haxe_ui_util_CallbackMap.prototype, {
 	,_map: null
 });
 class haxe_ui_util_Color {
+	static fromString(s) {
+		if(StringTools.startsWith(s,"0x") || StringTools.startsWith(s,"#")) {
+			return Std.parseInt("0x" + s.substring(s.length - 6));
+		}
+		switch(s) {
+		case "aqua":
+			return 65535;
+		case "black":
+			return 0;
+		case "blue":
+			return 255;
+		case "fuchsia":
+			return 16711935;
+		case "green":
+			return 32768;
+		case "gray":case "grey":
+			return 8421504;
+		case "lime":
+			return 65280;
+		case "maroon":
+			return 8388608;
+		case "navy":
+			return 128;
+		case "olive":
+			return 8421376;
+		case "purple":
+			return 8388736;
+		case "red":
+			return 16711680;
+		case "silver":
+			return 12632256;
+		case "teal":
+			return 32896;
+		case "white":
+			return 16777215;
+		case "yellow":
+			return 16776960;
+		default:
+			return 0;
+		}
+	}
 	static fromComponents(r,g,b,a) {
 		return (a & 255) << 24 | (r & 255) << 16 | (g & 255) << 8 | b & 255;
 	}
+	static get_r(this1) {
+		return this1 >> 16 & 255;
+	}
+	static set_r(this1,value) {
+		this1 = (this1 >> 24 & 255 & 255) << 24 | (value & 255) << 16 | (this1 >> 8 & 255 & 255) << 8 | this1 & 255 & 255;
+		return this1;
+	}
+	static get_g(this1) {
+		return this1 >> 8 & 255;
+	}
+	static set_g(this1,value) {
+		this1 = (this1 >> 24 & 255 & 255) << 24 | (this1 >> 16 & 255 & 255) << 16 | (value & 255) << 8 | this1 & 255 & 255;
+		return this1;
+	}
+	static get_b(this1) {
+		return this1 & 255;
+	}
+	static set_b(this1,value) {
+		this1 = (this1 >> 24 & 255 & 255) << 24 | (this1 >> 16 & 255 & 255) << 16 | (this1 >> 8 & 255 & 255) << 8 | value & 255;
+		return this1;
+	}
+	static get_a(this1) {
+		return this1 >> 24 & 255;
+	}
+	static set_a(this1,value) {
+		this1 = (value & 255) << 24 | (this1 >> 16 & 255 & 255) << 16 | (this1 >> 8 & 255 & 255) << 8 | this1 & 255 & 255;
+		return this1;
+	}
+	static set(this1,r,g,b,a) {
+		this1 = (a & 255) << 24 | (r & 255) << 16 | (g & 255) << 8 | b & 255;
+		return this1;
+	}
+	static toInt(this1) {
+		return this1;
+	}
+	static or(a,b) {
+		return haxe_ui_util_Color.toInt(a) | haxe_ui_util_Color.toInt(b);
+	}
+	static sumColor(a,b) {
+		return haxe_ui_util_Color.toInt(haxe_ui_util_Color.fromComponents((a >> 16 & 255) + (b >> 16 & 255),(a >> 8 & 255) + (b >> 8 & 255),(a & 255) + (b & 255),(a >> 24 & 255) + (b >> 24 & 255)));
+	}
+	static restColor(a,b) {
+		return haxe_ui_util_Color.toInt(haxe_ui_util_Color.fromComponents((a >> 16 & 255) - (b >> 16 & 255),(a >> 8 & 255) - (b >> 8 & 255),(a & 255) - (b & 255),(a >> 24 & 255) - (b >> 24 & 255)));
+	}
+	static sumFloat(a,b) {
+		let bInt = b | 0;
+		return haxe_ui_util_Color.toInt(haxe_ui_util_Color.fromComponents((a >> 16 & 255) - bInt,(a >> 8 & 255) - bInt,(a & 255) - bInt,(a >> 24 & 255) - bInt));
+	}
+	static mulFloat(a,b) {
+		return haxe_ui_util_Color.toInt(haxe_ui_util_Color.fromComponents((a >> 16 & 255) * b | 0,(a >> 8 & 255) * b | 0,(a & 255) * b | 0,(a >> 24 & 255) * b | 0));
+	}
 }
+haxe_ui_util_Color.__properties__ = {set_a: "set_a",get_a: "get_a",set_b: "set_b",get_b: "get_b",set_g: "set_g",get_g: "get_g",set_r: "set_r",get_r: "get_r"};
+class haxe_ui_util_ColorUtil {
+	static buildColorArray(startColor,endColor,size) {
+		let array = [];
+		let r1 = startColor >> 16 & 255;
+		let g1 = startColor >> 8 & 255;
+		let b1 = startColor & 255;
+		let ri = ((endColor >> 16 & 255) - r1) / (size - 1);
+		let gi = ((endColor >> 8 & 255) - g1) / (size - 1);
+		let bi = ((endColor & 255) - b1) / (size - 1);
+		let r = r1;
+		let g = g1;
+		let b = b1;
+		let c;
+		let _g = 0;
+		let _g1 = size;
+		while(_g < _g1) {
+			++_g;
+			c = 0 | (Math.round(r) & 255) << 16 | (Math.round(g) & 255) << 8 | Math.round(b) & 255;
+			array.push(haxe_ui_util_Color.toInt(c));
+			r += ri;
+			g += gi;
+			b += bi;
+		}
+		return array;
+	}
+	static parseColor(s) {
+		if(StringTools.startsWith(s,"#")) {
+			s = s.substring(1,s.length);
+		} else if(StringTools.startsWith(s,"0x")) {
+			s = s.substring(2,s.length);
+		}
+		return Std.parseInt("0x" + s);
+	}
+}
+$hxClasses["haxe.ui.util.ColorUtil"] = haxe_ui_util_ColorUtil;
+haxe_ui_util_ColorUtil.__name__ = "haxe.ui.util.ColorUtil";
 class haxe_ui_util_ComponentUtil {
 	static getDepth(target) {
 		let count = 0;
@@ -28107,6 +32822,14 @@ class haxe_ui_util_EventMap {
 			}
 		}
 	}
+	listenerCount(type) {
+		let n = 0;
+		let arr = this._map.h[type];
+		if(arr != null) {
+			n = arr.get_length();
+		}
+		return n;
+	}
 	listeners(type) {
 		let arr = this._map.h[type];
 		if(arr == null) {
@@ -28147,6 +32870,9 @@ class haxe_ui_util_FunctionArray {
 		}
 		return this._array.push(listener);
 	}
+	pop() {
+		return this._array.pop().callback;
+	}
 	indexOf(x,fromIndex) {
 		if(fromIndex == null) {
 			fromIndex = 0;
@@ -28179,6 +32905,18 @@ class haxe_ui_util_FunctionArray {
 		fa._array = this._array.slice();
 		return fa;
 	}
+	toString() {
+		let s = "[";
+		let iter = this.iterator();
+		while(iter.hasNext()) {
+			s += Std.string(iter.next());
+			if(iter.hasNext()) {
+				s += ", ";
+			}
+		}
+		s += "]";
+		return s;
+	}
 }
 $hxClasses["haxe.ui.util.FunctionArray"] = haxe_ui_util_FunctionArray;
 haxe_ui_util_FunctionArray.__name__ = "haxe.ui.util.FunctionArray";
@@ -28188,6 +32926,28 @@ Object.assign(haxe_ui_util_FunctionArray.prototype, {
 	,length: null
 	,__properties__: {get_length: "get_length"}
 });
+class haxe_ui_util_GUID {
+	static randomIntegerWithinRange(min,max) {
+		return Math.floor(Math.random() * (1 + max - min) + min);
+	}
+	static createRandomIdentifier(length,radix) {
+		if(radix == null) {
+			radix = 61;
+		}
+		let characters = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
+		let id = [];
+		if(radix > 61) {
+			radix = 61;
+		}
+		while(length-- > 0) id.push(characters[Math.floor(Math.random() * (1 + radix))]);
+		return id.join("");
+	}
+	static uuid() {
+		return haxe_ui_util_GUID.createRandomIdentifier(8,15) + "-" + haxe_ui_util_GUID.createRandomIdentifier(4,15) + "-4" + haxe_ui_util_GUID.createRandomIdentifier(3,15) + "-" + ["8","9","A","B"][Math.floor(Math.random() * 4)] + haxe_ui_util_GUID.createRandomIdentifier(3,15) + "-" + haxe_ui_util_GUID.createRandomIdentifier(12,15);
+	}
+}
+$hxClasses["haxe.ui.util.GUID"] = haxe_ui_util_GUID;
+haxe_ui_util_GUID.__name__ = "haxe.ui.util.GUID";
 class haxe_ui_util_ImageLoader {
 	constructor(resource) {
 		this._resource = resource;
@@ -28256,6 +33016,15 @@ Object.assign(haxe_ui_util_ImageLoader.prototype, {
 	,_resource: null
 });
 class haxe_ui_util_Listener {
+	static _new(callback,priority) {
+		return new haxe_ui_util__$Listener_ListenerInternal(callback,priority);
+	}
+	static compareListener(a,b) {
+		return a.callback == b.callback;
+	}
+	static compareFunction(a,b) {
+		return a.callback == b;
+	}
 	static toFunc(this1) {
 		return this1.callback;
 	}
@@ -28273,7 +33042,35 @@ Object.assign(haxe_ui_util__$Listener_ListenerInternal.prototype, {
 	,callback: null
 	,priority: null
 });
+class haxe_ui_util_MathUtil {
+	static distance(x1,y1,x2,y2) {
+		return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+	}
+	static round(v,precision) {
+		if(precision == null) {
+			precision = 0;
+		}
+		return Math.round(v * Math.pow(10,precision)) / Math.pow(10,precision);
+	}
+	static clamp(v,min,max) {
+		if(v == null || isNaN(v)) {
+			return min;
+		}
+		if(min != null && v < min) {
+			v = min;
+		} else if(max != null && v > max) {
+			v = max;
+		}
+		return v;
+	}
+}
+$hxClasses["haxe.ui.util.MathUtil"] = haxe_ui_util_MathUtil;
+haxe_ui_util_MathUtil.__name__ = "haxe.ui.util.MathUtil";
 class haxe_ui_util_StringUtil {
+	static uncapitalizeFirstLetter(s) {
+		s = HxOverrides.substr(s,0,1).toLowerCase() + HxOverrides.substr(s,1,s.length);
+		return s;
+	}
 	static capitalizeFirstLetter(s) {
 		s = HxOverrides.substr(s,0,1).toUpperCase() + HxOverrides.substr(s,1,s.length);
 		return s;
@@ -28301,6 +33098,16 @@ class haxe_ui_util_StringUtil {
 			s1 = s1.toLowerCase();
 		}
 		return s1;
+	}
+	static replaceVars(s,params) {
+		if(params != null) {
+			let k = haxe_ds_StringMap.keysIterator(params.h);
+			while(k.hasNext()) {
+				let k1 = k.next();
+				s = StringTools.replace(s,"${" + k1 + "}",params.h[k1]);
+			}
+		}
+		return s;
 	}
 	static rpad(s,count,c) {
 		if(c == null) {
@@ -28332,6 +33139,11 @@ class haxe_ui_util_StyleUtil {
 	static styleProperty2ComponentProperty(property) {
 		return haxe_ui_util_StyleUtil.style2ComponentEReg.map(property,function(re) {
 			return re.matched(1).toUpperCase();
+		});
+	}
+	static componentProperty2StyleProperty(property) {
+		return haxe_ui_util_StyleUtil.component2StyleEReg.map(property,function(re) {
+			return "-" + re.matched(1).toLowerCase();
 		});
 	}
 }
@@ -28461,6 +33273,16 @@ class haxe_ui_util_Variant {
 			throw haxe_Exception.thrown("Variant Type Error");
 		}
 	}
+	static get_isFloat(this1) {
+		if(this1._hx_index == 1) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	static fromInt(s) {
+		return haxe_ui_util_VariantType.VT_Int(s);
+	}
 	static toInt(this1) {
 		if(haxe_ui_util_Variant.get_isNull(this1)) {
 			return null;
@@ -28472,6 +33294,23 @@ class haxe_ui_util_Variant {
 			return this1.s | 0;
 		default:
 			throw haxe_Exception.thrown("Variant Type Error");
+		}
+	}
+	static get_isInt(this1) {
+		if(this1._hx_index == 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	static get_isNumber(this1) {
+		switch(this1._hx_index) {
+		case 0:
+			return true;
+		case 1:
+			return true;
+		default:
+			return false;
 		}
 	}
 	static toNumber(this1) {
@@ -28523,6 +33362,12 @@ class haxe_ui_util_Variant {
 			throw haxe_Exception.thrown("Variant Type Error");
 		}
 	}
+	static get_isArray(this1) {
+		if(this1._hx_index == 4) {
+			return true;
+		}
+		return false;
+	}
 	static fromDate(s) {
 		return haxe_ui_util_VariantType.VT_Date(s);
 	}
@@ -28554,6 +33399,12 @@ class haxe_ui_util_Variant {
 		} else {
 			throw haxe_Exception.thrown("Variant Type Error");
 		}
+	}
+	static get_isComponent(this1) {
+		if(this1._hx_index == 6) {
+			return true;
+		}
+		return false;
 	}
 	static fromImageData(s) {
 		return haxe_ui_util_VariantType.VT_ImageData(s);
@@ -28587,6 +33438,234 @@ class haxe_ui_util_Variant {
 			throw haxe_Exception.thrown("Variant Type Error");
 		}
 	}
+	static get_isDataSource(this1) {
+		if(this1._hx_index == 5) {
+			return true;
+		}
+		return false;
+	}
+	static addFloat(lhs,rhs) {
+		return lhs + haxe_ui_util_Variant.toNumber(rhs);
+	}
+	static addInt(lhs,rhs) {
+		return lhs + haxe_ui_util_Variant.toInt(rhs);
+	}
+	static subtractFloat(lhs,rhs) {
+		return lhs - haxe_ui_util_Variant.toNumber(rhs);
+	}
+	static subtractInt(lhs,rhs) {
+		return lhs - haxe_ui_util_Variant.toInt(rhs);
+	}
+	static add(this1,rhs) {
+		let tmp;
+		let tmp1;
+		switch(this1._hx_index) {
+		case 0:
+			tmp1 = true;
+			break;
+		case 1:
+			tmp1 = true;
+			break;
+		default:
+			tmp1 = false;
+		}
+		if(tmp1) {
+			switch(rhs._hx_index) {
+			case 0:
+				tmp = true;
+				break;
+			case 1:
+				tmp = true;
+				break;
+			default:
+				tmp = false;
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.fromFloat(haxe_ui_util_Variant.toNumber(this1) + haxe_ui_util_Variant.toNumber(rhs));
+		} else if(haxe_ui_util_Variant.get_isString(this1) && haxe_ui_util_Variant.get_isString(rhs)) {
+			return haxe_ui_util_Variant.fromString(haxe_ui_util_Variant.toString(this1) + haxe_ui_util_Variant.toString(rhs));
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static postInc(this1) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			let old = this1;
+			this1 = haxe_ui_util_VariantType.VT_Float(haxe_ui_util_Variant.toNumber(this1) + 1);
+			return old;
+		} else {
+			throw haxe_Exception.thrown("Variant operation error");
+		}
+	}
+	static preInc(this1) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			this1 = haxe_ui_util_VariantType.VT_Float(haxe_ui_util_Variant.toNumber(this1) + 1);
+			return this1;
+		} else {
+			throw haxe_Exception.thrown("Variant operation error");
+		}
+	}
+	static subtract(this1,rhs) {
+		let tmp;
+		let tmp1;
+		switch(this1._hx_index) {
+		case 0:
+			tmp1 = true;
+			break;
+		case 1:
+			tmp1 = true;
+			break;
+		default:
+			tmp1 = false;
+		}
+		if(tmp1) {
+			switch(rhs._hx_index) {
+			case 0:
+				tmp = true;
+				break;
+			case 1:
+				tmp = true;
+				break;
+			default:
+				tmp = false;
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.fromFloat(haxe_ui_util_Variant.toNumber(this1) - haxe_ui_util_Variant.toNumber(rhs));
+		} else if(haxe_ui_util_Variant.get_isString(this1) && haxe_ui_util_Variant.get_isString(rhs)) {
+			return haxe_ui_util_Variant.fromString(StringTools.replace(haxe_ui_util_Variant.toString(this1),haxe_ui_util_Variant.toString(rhs),""));
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static postDeinc(this1) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			let old = this1;
+			this1 = haxe_ui_util_VariantType.VT_Float(haxe_ui_util_Variant.toNumber(this1) - 1);
+			return old;
+		} else {
+			throw haxe_Exception.thrown("Variant operation error");
+		}
+	}
+	static preDeinc(this1) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			this1 = haxe_ui_util_VariantType.VT_Float(haxe_ui_util_Variant.toNumber(this1) - 1);
+			return this1;
+		} else {
+			throw haxe_Exception.thrown("Variant operation error");
+		}
+	}
+	static multiply(this1,rhs) {
+		let tmp;
+		let tmp1;
+		switch(this1._hx_index) {
+		case 0:
+			tmp1 = true;
+			break;
+		case 1:
+			tmp1 = true;
+			break;
+		default:
+			tmp1 = false;
+		}
+		if(tmp1) {
+			switch(rhs._hx_index) {
+			case 0:
+				tmp = true;
+				break;
+			case 1:
+				tmp = true;
+				break;
+			default:
+				tmp = false;
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.fromFloat(haxe_ui_util_Variant.toNumber(this1) * haxe_ui_util_Variant.toNumber(rhs));
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static divide(this1,rhs) {
+		let tmp;
+		let tmp1;
+		switch(this1._hx_index) {
+		case 0:
+			tmp1 = true;
+			break;
+		case 1:
+			tmp1 = true;
+			break;
+		default:
+			tmp1 = false;
+		}
+		if(tmp1) {
+			switch(rhs._hx_index) {
+			case 0:
+				tmp = true;
+				break;
+			case 1:
+				tmp = true;
+				break;
+			default:
+				tmp = false;
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.fromFloat(haxe_ui_util_Variant.toNumber(this1) / haxe_ui_util_Variant.toNumber(rhs));
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
 	static gt(this1,rhs) {
 		let tmp;
 		switch(this1._hx_index) {
@@ -28606,6 +33685,25 @@ class haxe_ui_util_Variant {
 		}
 		throw haxe_Exception.thrown("Variant operation error");
 	}
+	static gte(this1,rhs) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.toNumber(this1) >= haxe_ui_util_Variant.toNumber(rhs);
+		} else if(haxe_ui_util_Variant.get_isString(this1)) {
+			return haxe_ui_util_Variant.toString(this1) >= haxe_ui_util_Variant.toString(rhs);
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
 	static lt(this1,rhs) {
 		let tmp;
 		switch(this1._hx_index) {
@@ -28622,6 +33720,50 @@ class haxe_ui_util_Variant {
 			return haxe_ui_util_Variant.toNumber(this1) < haxe_ui_util_Variant.toNumber(rhs);
 		} else if(haxe_ui_util_Variant.get_isString(this1)) {
 			return haxe_ui_util_Variant.toString(this1) < haxe_ui_util_Variant.toString(rhs);
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static lte(this1,rhs) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.toNumber(this1) <= haxe_ui_util_Variant.toNumber(rhs);
+		} else if(haxe_ui_util_Variant.get_isString(this1)) {
+			return haxe_ui_util_Variant.toString(this1) <= haxe_ui_util_Variant.toString(rhs);
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static negate(this1) {
+		let tmp;
+		switch(this1._hx_index) {
+		case 0:
+			tmp = true;
+			break;
+		case 1:
+			tmp = true;
+			break;
+		default:
+			tmp = false;
+		}
+		if(tmp) {
+			return haxe_ui_util_Variant.fromFloat(-haxe_ui_util_Variant.toNumber(this1));
+		}
+		throw haxe_Exception.thrown("Variant operation error");
+	}
+	static invert(this1) {
+		if(haxe_ui_util_Variant.get_isBool(this1)) {
+			let v = haxe_ui_util_Variant.toBool(this1);
+			v = !v;
+			return haxe_ui_util_Variant.fromBool(v);
 		}
 		throw haxe_Exception.thrown("Variant operation error");
 	}
@@ -28767,7 +33909,540 @@ class haxe_ui_util_Variant {
 		return d;
 	}
 }
-haxe_ui_util_Variant.__properties__ = {get_isNull: "get_isNull",get_isImageData: "get_isImageData",get_isDate: "get_isDate",get_isBool: "get_isBool",get_isString: "get_isString"};
+haxe_ui_util_Variant.__properties__ = {get_isNull: "get_isNull",get_isDataSource: "get_isDataSource",get_isImageData: "get_isImageData",get_isComponent: "get_isComponent",get_isDate: "get_isDate",get_isArray: "get_isArray",get_isBool: "get_isBool",get_isNumber: "get_isNumber",get_isInt: "get_isInt",get_isFloat: "get_isFloat",get_isString: "get_isString"};
+class haxe_xml_XmlParserException {
+	constructor(message,xml,position) {
+		this.xml = xml;
+		this.message = message;
+		this.position = position;
+		this.lineNumber = 1;
+		this.positionAtLine = 0;
+		let _g = 0;
+		while(_g < position) {
+			let c = xml.charCodeAt(_g++);
+			if(c == 10) {
+				this.lineNumber++;
+				this.positionAtLine = 0;
+			} else if(c != 13) {
+				this.positionAtLine++;
+			}
+		}
+	}
+	toString() {
+		let c = js_Boot.getClass(this);
+		return c.__name__ + ": " + this.message + " at line " + this.lineNumber + " char " + this.positionAtLine;
+	}
+}
+$hxClasses["haxe.xml.XmlParserException"] = haxe_xml_XmlParserException;
+haxe_xml_XmlParserException.__name__ = "haxe.xml.XmlParserException";
+Object.assign(haxe_xml_XmlParserException.prototype, {
+	__class__: haxe_xml_XmlParserException
+	,message: null
+	,lineNumber: null
+	,positionAtLine: null
+	,position: null
+	,xml: null
+});
+class haxe_xml_Parser {
+	static parse(str,strict) {
+		if(strict == null) {
+			strict = false;
+		}
+		let doc = Xml.createDocument();
+		haxe_xml_Parser.doParse(str,strict,0,doc);
+		return doc;
+	}
+	static doParse(str,strict,p,parent) {
+		if(p == null) {
+			p = 0;
+		}
+		let xml = null;
+		let state = 1;
+		let next = 1;
+		let aname = null;
+		let start = 0;
+		let nsubs = 0;
+		let nbrackets = 0;
+		let c = str.charCodeAt(p);
+		let buf = new StringBuf();
+		let escapeNext = 1;
+		let attrValQuote = -1;
+		while(c == c) {
+			switch(state) {
+			case 0:
+				switch(c) {
+				case 9:case 10:case 13:case 32:
+					break;
+				default:
+					state = next;
+					continue;
+				}
+				break;
+			case 1:
+				if(c == 60) {
+					state = 0;
+					next = 2;
+				} else {
+					start = p;
+					state = 13;
+					continue;
+				}
+				break;
+			case 2:
+				switch(c) {
+				case 33:
+					if(str.charCodeAt(p + 1) == 91) {
+						p += 2;
+						if(HxOverrides.substr(str,p,6).toUpperCase() != "CDATA[") {
+							throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected <![CDATA[",str,p));
+						}
+						p += 5;
+						state = 17;
+						start = p + 1;
+					} else if(str.charCodeAt(p + 1) == 68 || str.charCodeAt(p + 1) == 100) {
+						if(HxOverrides.substr(str,p + 2,6).toUpperCase() != "OCTYPE") {
+							throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected <!DOCTYPE",str,p));
+						}
+						p += 8;
+						state = 16;
+						start = p + 1;
+					} else if(str.charCodeAt(p + 1) != 45 || str.charCodeAt(p + 2) != 45) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected <!--",str,p));
+					} else {
+						p += 2;
+						state = 15;
+						start = p + 1;
+					}
+					break;
+				case 47:
+					if(parent == null) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected node name",str,p));
+					}
+					start = p + 1;
+					state = 0;
+					next = 10;
+					break;
+				case 63:
+					state = 14;
+					start = p;
+					break;
+				default:
+					state = 3;
+					start = p;
+					continue;
+				}
+				break;
+			case 3:
+				if(!(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 58 || c == 46 || c == 95 || c == 45)) {
+					if(p == start) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected node name",str,p));
+					}
+					xml = Xml.createElement(HxOverrides.substr(str,start,p - start));
+					parent.addChild(xml);
+					++nsubs;
+					state = 0;
+					next = 4;
+					continue;
+				}
+				break;
+			case 4:
+				switch(c) {
+				case 47:
+					state = 11;
+					break;
+				case 62:
+					state = 9;
+					break;
+				default:
+					state = 5;
+					start = p;
+					continue;
+				}
+				break;
+			case 5:
+				if(!(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 58 || c == 46 || c == 95 || c == 45)) {
+					if(start == p) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected attribute name",str,p));
+					}
+					aname = HxOverrides.substr(str,start,p - start);
+					if(xml.exists(aname)) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Duplicate attribute [" + aname + "]",str,p));
+					}
+					state = 0;
+					next = 6;
+					continue;
+				}
+				break;
+			case 6:
+				if(c == 61) {
+					state = 0;
+					next = 7;
+				} else {
+					throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected =",str,p));
+				}
+				break;
+			case 7:
+				switch(c) {
+				case 34:case 39:
+					buf = new StringBuf();
+					state = 8;
+					start = p + 1;
+					attrValQuote = c;
+					break;
+				default:
+					throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected \"",str,p));
+				}
+				break;
+			case 8:
+				switch(c) {
+				case 38:
+					let len = p - start;
+					buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+					state = 18;
+					escapeNext = 8;
+					start = p + 1;
+					break;
+				case 60:case 62:
+					if(strict) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Invalid unescaped " + String.fromCodePoint(c) + " in attribute value",str,p));
+					} else if(c == attrValQuote) {
+						let len = p - start;
+						buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+						let val = buf.b;
+						buf = new StringBuf();
+						xml.set(aname,val);
+						state = 0;
+						next = 4;
+					}
+					break;
+				default:
+					if(c == attrValQuote) {
+						let len = p - start;
+						buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+						let val = buf.b;
+						buf = new StringBuf();
+						xml.set(aname,val);
+						state = 0;
+						next = 4;
+					}
+				}
+				break;
+			case 9:
+				p = haxe_xml_Parser.doParse(str,strict,p,xml);
+				start = p;
+				state = 1;
+				break;
+			case 10:
+				if(!(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 58 || c == 46 || c == 95 || c == 45)) {
+					if(start == p) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected node name",str,p));
+					}
+					let v = HxOverrides.substr(str,start,p - start);
+					if(parent == null || parent.nodeType != 0) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Unexpected </" + v + ">, tag is not open",str,p));
+					}
+					if(parent.nodeType != Xml.Element) {
+						throw haxe_Exception.thrown("Bad node type, expected Element but found " + (parent.nodeType == null ? "null" : XmlType.toString(parent.nodeType)));
+					}
+					if(v != parent.nodeName) {
+						if(parent.nodeType != Xml.Element) {
+							throw haxe_Exception.thrown("Bad node type, expected Element but found " + (parent.nodeType == null ? "null" : XmlType.toString(parent.nodeType)));
+						}
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected </" + parent.nodeName + ">",str,p));
+					}
+					state = 0;
+					next = 12;
+					continue;
+				}
+				break;
+			case 11:
+				if(c == 62) {
+					state = 1;
+				} else {
+					throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected >",str,p));
+				}
+				break;
+			case 12:
+				if(c == 62) {
+					if(nsubs == 0) {
+						parent.addChild(Xml.createPCData(""));
+					}
+					return p;
+				} else {
+					throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Expected >",str,p));
+				}
+				break;
+			case 13:
+				if(c == 60) {
+					let len = p - start;
+					buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+					let child = Xml.createPCData(buf.b);
+					buf = new StringBuf();
+					parent.addChild(child);
+					++nsubs;
+					state = 0;
+					next = 2;
+				} else if(c == 38) {
+					let len = p - start;
+					buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+					state = 18;
+					escapeNext = 13;
+					start = p + 1;
+				}
+				break;
+			case 14:
+				if(c == 63 && str.charCodeAt(p + 1) == 62) {
+					++p;
+					parent.addChild(Xml.createProcessingInstruction(HxOverrides.substr(str,start + 1,p - start - 2)));
+					++nsubs;
+					state = 1;
+				}
+				break;
+			case 15:
+				if(c == 45 && str.charCodeAt(p + 1) == 45 && str.charCodeAt(p + 2) == 62) {
+					parent.addChild(Xml.createComment(HxOverrides.substr(str,start,p - start)));
+					++nsubs;
+					p += 2;
+					state = 1;
+				}
+				break;
+			case 16:
+				if(c == 91) {
+					++nbrackets;
+				} else if(c == 93) {
+					--nbrackets;
+				} else if(c == 62 && nbrackets == 0) {
+					parent.addChild(Xml.createDocType(HxOverrides.substr(str,start,p - start)));
+					++nsubs;
+					state = 1;
+				}
+				break;
+			case 17:
+				if(c == 93 && str.charCodeAt(p + 1) == 93 && str.charCodeAt(p + 2) == 62) {
+					parent.addChild(Xml.createCData(HxOverrides.substr(str,start,p - start)));
+					++nsubs;
+					p += 2;
+					state = 1;
+				}
+				break;
+			case 18:
+				if(c == 59) {
+					let s = HxOverrides.substr(str,start,p - start);
+					if(s.charCodeAt(0) == 35) {
+						let c = s.charCodeAt(1) == 120 ? Std.parseInt("0" + HxOverrides.substr(s,1,s.length - 1)) : Std.parseInt(HxOverrides.substr(s,1,s.length - 1));
+						buf.b += String.fromCodePoint(c);
+					} else if(!Object.prototype.hasOwnProperty.call(haxe_xml_Parser.escapes.h,s)) {
+						if(strict) {
+							throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Undefined entity: " + s,str,p));
+						}
+						buf.b += Std.string("&" + s + ";");
+					} else {
+						buf.b += Std.string(haxe_xml_Parser.escapes.h[s]);
+					}
+					start = p + 1;
+					state = escapeNext;
+				} else if(!(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 58 || c == 46 || c == 95 || c == 45) && c != 35) {
+					if(strict) {
+						throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Invalid character in entity: " + String.fromCodePoint(c),str,p));
+					}
+					buf.b += String.fromCodePoint(38);
+					let len = p - start;
+					buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+					--p;
+					start = p + 1;
+					state = escapeNext;
+				}
+				break;
+			}
+			c = str.charCodeAt(++p);
+		}
+		if(state == 1) {
+			start = p;
+			state = 13;
+		}
+		if(state == 13) {
+			if(parent.nodeType == 0) {
+				if(parent.nodeType != Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, expected Element but found " + (parent.nodeType == null ? "null" : XmlType.toString(parent.nodeType)));
+				}
+				throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Unclosed node <" + parent.nodeName + ">",str,p));
+			}
+			if(p != start || nsubs == 0) {
+				let len = p - start;
+				buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+				parent.addChild(Xml.createPCData(buf.b));
+				++nsubs;
+			}
+			return p;
+		}
+		if(!strict && state == 18 && escapeNext == 13) {
+			buf.b += String.fromCodePoint(38);
+			let len = p - start;
+			buf.b += len == null ? HxOverrides.substr(str,start,null) : HxOverrides.substr(str,start,len);
+			parent.addChild(Xml.createPCData(buf.b));
+			++nsubs;
+			return p;
+		}
+		throw haxe_Exception.thrown(new haxe_xml_XmlParserException("Unexpected end",str,p));
+	}
+}
+$hxClasses["haxe.xml.Parser"] = haxe_xml_Parser;
+haxe_xml_Parser.__name__ = "haxe.xml.Parser";
+class haxe_xml_Printer {
+	constructor(pretty) {
+		this.output = new StringBuf();
+		this.pretty = pretty;
+	}
+	writeNode(value,tabs) {
+		switch(value.nodeType) {
+		case 0:
+			this.output.b += Std.string(tabs + "<");
+			if(value.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element but found " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			this.output.b += Std.string(value.nodeName);
+			let attribute = value.attributes();
+			while(attribute.hasNext()) {
+				let attribute1 = attribute.next();
+				this.output.b += Std.string(" " + attribute1 + "=\"");
+				let input = StringTools.htmlEscape(value.get(attribute1),true);
+				this.output.b += Std.string(input);
+				this.output.b += "\"";
+			}
+			if(this.hasChildren(value)) {
+				this.output.b += ">";
+				if(this.pretty) {
+					this.output.b += "\n";
+				}
+				if(value.nodeType != Xml.Document && value.nodeType != Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+				}
+				let _this = value.children;
+				let _g_current = 0;
+				while(_g_current < _this.length) this.writeNode(_this[_g_current++],this.pretty ? tabs + "\t" : tabs);
+				this.output.b += Std.string(tabs + "</");
+				if(value.nodeType != Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, expected Element but found " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+				}
+				this.output.b += Std.string(value.nodeName);
+				this.output.b += ">";
+				if(this.pretty) {
+					this.output.b += "\n";
+				}
+			} else {
+				this.output.b += "/>";
+				if(this.pretty) {
+					this.output.b += "\n";
+				}
+			}
+			break;
+		case 1:
+			if(value.nodeType == Xml.Document || value.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			let nodeValue = value.nodeValue;
+			if(nodeValue.length != 0) {
+				let input = tabs + StringTools.htmlEscape(nodeValue);
+				this.output.b += Std.string(input);
+				if(this.pretty) {
+					this.output.b += "\n";
+				}
+			}
+			break;
+		case 2:
+			this.output.b += Std.string(tabs + "<![CDATA[");
+			if(value.nodeType == Xml.Document || value.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			this.output.b += Std.string(value.nodeValue);
+			this.output.b += "]]>";
+			if(this.pretty) {
+				this.output.b += "\n";
+			}
+			break;
+		case 3:
+			if(value.nodeType == Xml.Document || value.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			let commentContent = value.nodeValue;
+			let _this_r = new RegExp("[
+\r\t]+","g".split("u").join(""));
+			commentContent = commentContent.replace(_this_r,"");
+			commentContent = "<!--" + commentContent + "-->";
+			this.output.b += tabs == null ? "null" : "" + tabs;
+			this.output.b += Std.string(StringTools.trim(commentContent));
+			if(this.pretty) {
+				this.output.b += "\n";
+			}
+			break;
+		case 4:
+			if(value.nodeType == Xml.Document || value.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			this.output.b += Std.string("<!DOCTYPE " + value.nodeValue + ">");
+			if(this.pretty) {
+				this.output.b += "\n";
+			}
+			break;
+		case 5:
+			if(value.nodeType == Xml.Document || value.nodeType == Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, unexpected " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			this.output.b += Std.string("<?" + value.nodeValue + "?>");
+			if(this.pretty) {
+				this.output.b += "\n";
+			}
+			break;
+		case 6:
+			if(value.nodeType != Xml.Document && value.nodeType != Xml.Element) {
+				throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+			}
+			let _this = value.children;
+			let _g_current = 0;
+			while(_g_current < _this.length) this.writeNode(_this[_g_current++],tabs);
+			break;
+		}
+	}
+	hasChildren(value) {
+		if(value.nodeType != Xml.Document && value.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (value.nodeType == null ? "null" : XmlType.toString(value.nodeType)));
+		}
+		let _this = value.children;
+		let _g_current = 0;
+		while(_g_current < _this.length) {
+			let child = _this[_g_current++];
+			switch(child.nodeType) {
+			case 0:case 1:
+				return true;
+			case 2:case 3:
+				if(child.nodeType == Xml.Document || child.nodeType == Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, unexpected " + (child.nodeType == null ? "null" : XmlType.toString(child.nodeType)));
+				}
+				if(StringTools.ltrim(child.nodeValue).length != 0) {
+					return true;
+				}
+				break;
+			default:
+			}
+		}
+		return false;
+	}
+	static print(xml,pretty) {
+		if(pretty == null) {
+			pretty = false;
+		}
+		let printer = new haxe_xml_Printer(pretty);
+		printer.writeNode(xml,"");
+		return printer.output.b;
+	}
+}
+$hxClasses["haxe.xml.Printer"] = haxe_xml_Printer;
+haxe_xml_Printer.__name__ = "haxe.xml.Printer";
+Object.assign(haxe_xml_Printer.prototype, {
+	__class__: haxe_xml_Printer
+	,output: null
+	,pretty: null
+});
 var hscript_Const = $hxEnums["hscript.Const"] = { __ename__ : true, __constructs__ : ["CInt","CFloat","CString"]
 	,CInt: ($_=function(v) { return {_hx_index:0,v:v,__enum__:"hscript.Const",toString:$estr}; },$_.__params__ = ["v"],$_)
 	,CFloat: ($_=function(f) { return {_hx_index:1,f:f,__enum__:"hscript.Const",toString:$estr}; },$_.__params__ = ["f"],$_)
@@ -28821,6 +34496,24 @@ var hscript_Error = $hxEnums["hscript.Error"] = { __ename__ : true, __constructs
 	,EInvalidOp: ($_=function(op) { return {_hx_index:7,op:op,__enum__:"hscript.Error",toString:$estr}; },$_.__params__ = ["op"],$_)
 	,EInvalidAccess: ($_=function(f) { return {_hx_index:8,f:f,__enum__:"hscript.Error",toString:$estr}; },$_.__params__ = ["f"],$_)
 	,ECustom: ($_=function(msg) { return {_hx_index:9,msg:msg,__enum__:"hscript.Error",toString:$estr}; },$_.__params__ = ["msg"],$_)
+};
+var hscript_ModuleDecl = $hxEnums["hscript.ModuleDecl"] = { __ename__ : true, __constructs__ : ["DPackage","DImport","DClass","DTypedef"]
+	,DPackage: ($_=function(path) { return {_hx_index:0,path:path,__enum__:"hscript.ModuleDecl",toString:$estr}; },$_.__params__ = ["path"],$_)
+	,DImport: ($_=function(path,everything) { return {_hx_index:1,path:path,everything:everything,__enum__:"hscript.ModuleDecl",toString:$estr}; },$_.__params__ = ["path","everything"],$_)
+	,DClass: ($_=function(c) { return {_hx_index:2,c:c,__enum__:"hscript.ModuleDecl",toString:$estr}; },$_.__params__ = ["c"],$_)
+	,DTypedef: ($_=function(c) { return {_hx_index:3,c:c,__enum__:"hscript.ModuleDecl",toString:$estr}; },$_.__params__ = ["c"],$_)
+};
+var hscript_FieldAccess = $hxEnums["hscript.FieldAccess"] = { __ename__ : true, __constructs__ : ["APublic","APrivate","AInline","AOverride","AStatic","AMacro"]
+	,APublic: {_hx_index:0,__enum__:"hscript.FieldAccess",toString:$estr}
+	,APrivate: {_hx_index:1,__enum__:"hscript.FieldAccess",toString:$estr}
+	,AInline: {_hx_index:2,__enum__:"hscript.FieldAccess",toString:$estr}
+	,AOverride: {_hx_index:3,__enum__:"hscript.FieldAccess",toString:$estr}
+	,AStatic: {_hx_index:4,__enum__:"hscript.FieldAccess",toString:$estr}
+	,AMacro: {_hx_index:5,__enum__:"hscript.FieldAccess",toString:$estr}
+};
+var hscript_FieldKind = $hxEnums["hscript.FieldKind"] = { __ename__ : true, __constructs__ : ["KFunction","KVar"]
+	,KFunction: ($_=function(f) { return {_hx_index:0,f:f,__enum__:"hscript.FieldKind",toString:$estr}; },$_.__params__ = ["f"],$_)
+	,KVar: ($_=function(v) { return {_hx_index:1,v:v,__enum__:"hscript.FieldKind",toString:$estr}; },$_.__params__ = ["v"],$_)
 };
 var hscript__$Interp_Stop = $hxEnums["hscript._Interp.Stop"] = { __ename__ : true, __constructs__ : ["SBreak","SContinue","SReturn"]
 	,SBreak: {_hx_index:0,__enum__:"hscript._Interp.Stop",toString:$estr}
@@ -28878,6 +34571,11 @@ class hscript_Parser {
 		this.unops.h["-"] = false;
 		this.unops.h["~"] = false;
 	}
+	error(err,pmin,pmax) {
+		if(!this.resumeErrors) {
+			throw haxe_Exception.thrown(err);
+		}
+	}
 	invalidChar(c) {
 		if(!this.resumeErrors) {
 			throw haxe_Exception.thrown(hscript_Error.EInvalidChar(c));
@@ -28927,6 +34625,22 @@ class hscript_Parser {
 		}
 		return null;
 	}
+	push(tk) {
+		let _this = this.tokens;
+		_this.head = new haxe_ds_GenericCell(tk,_this.head);
+	}
+	ensure(tk) {
+		let t = this.token();
+		if(t != tk) {
+			this.unexpected(t);
+		}
+	}
+	ensureToken(tk) {
+		let t = this.token();
+		if(!Type.enumEq(t,tk)) {
+			this.unexpected(t);
+		}
+	}
 	maybe(tk) {
 		let t = this.token();
 		if(Type.enumEq(t,tk)) {
@@ -28947,6 +34661,18 @@ class hscript_Parser {
 			this.unexpected(tk);
 			return null;
 		}
+	}
+	expr(e) {
+		return e;
+	}
+	pmin(e) {
+		return 0;
+	}
+	pmax(e) {
+		return 0;
+	}
+	mk(e,pmin,pmax) {
+		return e;
 	}
 	isBlock(e) {
 		if(e == null) {
@@ -30151,6 +35877,238 @@ class hscript_Parser {
 		}
 		return args;
 	}
+	parseModule(content,origin) {
+		if(origin == null) {
+			origin = "hscript";
+		}
+		this.initParser(origin);
+		this.input = content;
+		this.readPos = 0;
+		this.allowTypes = true;
+		this.allowMetadata = true;
+		let decls = [];
+		while(true) {
+			let tk = this.token();
+			if(tk == hscript_Token.TEof) {
+				break;
+			}
+			let _this = this.tokens;
+			_this.head = new haxe_ds_GenericCell(tk,_this.head);
+			decls.push(this.parseModuleDecl());
+		}
+		return decls;
+	}
+	parseMetadata() {
+		let meta = [];
+		while(true) {
+			let tk = this.token();
+			if(tk == null) {
+				let _this = this.tokens;
+				_this.head = new haxe_ds_GenericCell(tk,_this.head);
+				break;
+			} else if(tk._hx_index == 15) {
+				meta.push({ name : tk.s, params : this.parseMetaArgs()});
+			} else {
+				let _this = this.tokens;
+				_this.head = new haxe_ds_GenericCell(tk,_this.head);
+				break;
+			}
+		}
+		return meta;
+	}
+	parseParams() {
+		if(this.maybe(hscript_Token.TOp("<"))) {
+			if(!this.resumeErrors) {
+				throw haxe_Exception.thrown(hscript_Error.EInvalidOp("Unsupported class type parameters"));
+			}
+		}
+		return { };
+	}
+	parseModuleDecl() {
+		let meta = this.parseMetadata();
+		let ident = this.getIdent();
+		let isPrivate = false;
+		let isExtern = false;
+		_hx_loop1: while(true) {
+			switch(ident) {
+			case "extern":
+				isExtern = true;
+				break;
+			case "private":
+				isPrivate = true;
+				break;
+			default:
+				break _hx_loop1;
+			}
+			ident = this.getIdent();
+		}
+		switch(ident) {
+		case "class":
+			let name = this.getIdent();
+			let params = this.parseParams();
+			let extend = null;
+			let implement = [];
+			_hx_loop2: while(true) {
+				let t = this.token();
+				if(t == null) {
+					let _this = this.tokens;
+					_this.head = new haxe_ds_GenericCell(t,_this.head);
+					break;
+				} else if(t._hx_index == 2) {
+					switch(t.s) {
+					case "extends":
+						extend = this.parseType();
+						break;
+					case "implements":
+						implement.push(this.parseType());
+						break;
+					default:
+						let _this = this.tokens;
+						_this.head = new haxe_ds_GenericCell(t,_this.head);
+						break _hx_loop2;
+					}
+				} else {
+					let _this = this.tokens;
+					_this.head = new haxe_ds_GenericCell(t,_this.head);
+					break;
+				}
+			}
+			let fields = [];
+			let t = this.token();
+			if(t != hscript_Token.TBrOpen) {
+				this.unexpected(t);
+			}
+			while(!this.maybe(hscript_Token.TBrClose)) fields.push(this.parseField());
+			return hscript_ModuleDecl.DClass({ name : name, meta : meta, params : params, extend : extend, implement : implement, fields : fields, isPrivate : isPrivate, isExtern : isExtern});
+		case "import":
+			let path = [this.getIdent()];
+			let star = false;
+			while(true) {
+				let t = this.token();
+				if(t != hscript_Token.TDot) {
+					let _this = this.tokens;
+					_this.head = new haxe_ds_GenericCell(t,_this.head);
+					break;
+				}
+				t = this.token();
+				if(t == null) {
+					this.unexpected(t);
+				} else {
+					switch(t._hx_index) {
+					case 2:
+						path.push(t.s);
+						break;
+					case 3:
+						if(t.s == "*") {
+							star = true;
+						} else {
+							this.unexpected(t);
+						}
+						break;
+					default:
+						this.unexpected(t);
+					}
+				}
+			}
+			let t1 = this.token();
+			if(t1 != hscript_Token.TSemicolon) {
+				this.unexpected(t1);
+			}
+			return hscript_ModuleDecl.DImport(path,star);
+		case "package":
+			let path1 = this.parsePath();
+			let t2 = this.token();
+			if(t2 != hscript_Token.TSemicolon) {
+				this.unexpected(t2);
+			}
+			return hscript_ModuleDecl.DPackage(path1);
+		case "typedef":
+			let name1 = this.getIdent();
+			let params1 = this.parseParams();
+			let t3 = this.token();
+			if(!Type.enumEq(t3,hscript_Token.TOp("="))) {
+				this.unexpected(t3);
+			}
+			return hscript_ModuleDecl.DTypedef({ name : name1, meta : meta, params : params1, isPrivate : isPrivate, t : this.parseType()});
+		default:
+			this.unexpected(hscript_Token.TId(ident));
+		}
+		return null;
+	}
+	parseField() {
+		let meta = this.parseMetadata();
+		let access = [];
+		_hx_loop1: while(true) {
+			let id = this.getIdent();
+			switch(id) {
+			case "function":
+				let name = this.getIdent();
+				let inf = this.parseFunctionDecl();
+				return { name : name, meta : meta, access : access, kind : hscript_FieldKind.KFunction({ args : inf.args, expr : inf.body, ret : inf.ret})};
+			case "inline":
+				access.push(hscript_FieldAccess.AInline);
+				break;
+			case "macro":
+				access.push(hscript_FieldAccess.AMacro);
+				break;
+			case "override":
+				access.push(hscript_FieldAccess.AOverride);
+				break;
+			case "private":
+				access.push(hscript_FieldAccess.APrivate);
+				break;
+			case "public":
+				access.push(hscript_FieldAccess.APublic);
+				break;
+			case "static":
+				access.push(hscript_FieldAccess.AStatic);
+				break;
+			case "var":
+				let name1 = this.getIdent();
+				let get = null;
+				let set = null;
+				if(this.maybe(hscript_Token.TPOpen)) {
+					get = this.getIdent();
+					let t = this.token();
+					if(t != hscript_Token.TComma) {
+						this.unexpected(t);
+					}
+					set = this.getIdent();
+					let t1 = this.token();
+					if(t1 != hscript_Token.TPClose) {
+						this.unexpected(t1);
+					}
+				}
+				let type = this.maybe(hscript_Token.TDoubleDot) ? this.parseType() : null;
+				let expr = this.maybe(hscript_Token.TOp("=")) ? this.parseExpr() : null;
+				if(expr != null) {
+					if(this.isBlock(expr)) {
+						this.maybe(hscript_Token.TSemicolon);
+					} else {
+						let t = this.token();
+						if(t != hscript_Token.TSemicolon) {
+							this.unexpected(t);
+						}
+					}
+				} else if(type != null && (type == null ? false : type._hx_index == 2)) {
+					this.maybe(hscript_Token.TSemicolon);
+				} else {
+					let t = this.token();
+					if(t != hscript_Token.TSemicolon) {
+						this.unexpected(t);
+					}
+				}
+				return { name : name1, meta : meta, access : access, kind : hscript_FieldKind.KVar({ get : get, set : set, type : type, expr : expr})};
+			default:
+				this.unexpected(hscript_Token.TId(id));
+				break _hx_loop1;
+			}
+		}
+		return null;
+	}
+	readChar() {
+		return this.input.charCodeAt(this.readPos++);
+	}
 	readString(until) {
 		let b_b = "";
 		let esc = false;
@@ -30762,6 +36720,284 @@ Object.assign(hscript_Parser.prototype, {
 	,tokens: null
 	,preprocStack: null
 });
+class hscript_Tools {
+	static iter(e,f) {
+		switch(e._hx_index) {
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+			let _g = e.e;
+			if(_g != null) {
+				f(_g);
+			}
+			break;
+		case 3:
+			f(e.e);
+			break;
+		case 4:
+			let _g1 = e.e;
+			let _g2 = 0;
+			while(_g2 < _g1.length) f(_g1[_g2++]);
+			break;
+		case 5:
+			f(e.e);
+			break;
+		case 6:
+			f(e.e1);
+			f(e.e2);
+			break;
+		case 7:
+			f(e.e);
+			break;
+		case 8:
+			let _g3 = e.params;
+			f(e.e);
+			let _g4 = 0;
+			while(_g4 < _g3.length) f(_g3[_g4++]);
+			break;
+		case 9:
+			let _g5 = e.e2;
+			f(e.cond);
+			f(e.e1);
+			if(_g5 != null) {
+				f(_g5);
+			}
+			break;
+		case 10:
+			f(e.cond);
+			f(e.e);
+			break;
+		case 11:
+			f(e.it);
+			f(e.e);
+			break;
+		case 12:case 13:
+			break;
+		case 14:
+			f(e.e);
+			break;
+		case 15:
+			let _g6 = e.e;
+			if(_g6 != null) {
+				f(_g6);
+			}
+			break;
+		case 16:
+			f(e.e);
+			f(e.index);
+			break;
+		case 17:
+			let _g7 = e.e;
+			let _g8 = 0;
+			while(_g8 < _g7.length) f(_g7[_g8++]);
+			break;
+		case 18:
+			let _g9 = e.params;
+			let _g10 = 0;
+			while(_g10 < _g9.length) f(_g9[_g10++]);
+			break;
+		case 19:
+			f(e.e);
+			break;
+		case 20:
+			f(e.e);
+			f(e.ecatch);
+			break;
+		case 21:
+			let _g11 = e.fl;
+			let _g12 = 0;
+			while(_g12 < _g11.length) f(_g11[_g12++].e);
+			break;
+		case 22:
+			f(e.cond);
+			f(e.e1);
+			f(e.e2);
+			break;
+		case 23:
+			let _g13 = e.defaultExpr;
+			let _g14 = e.cases;
+			f(e.e);
+			let _g15 = 0;
+			while(_g15 < _g14.length) {
+				let c = _g14[_g15];
+				++_g15;
+				let _g = 0;
+				let _g1 = c.values;
+				while(_g < _g1.length) f(_g1[_g++]);
+				f(c.expr);
+			}
+			if(_g13 != null) {
+				f(_g13);
+			}
+			break;
+		case 24:
+			f(e.cond);
+			f(e.e);
+			break;
+		case 25:
+			let _g16 = e.e;
+			let _g17 = e.args;
+			if(_g17 != null) {
+				let _g = 0;
+				while(_g < _g17.length) f(_g17[_g++]);
+			}
+			f(_g16);
+			break;
+		case 26:
+			f(e.e);
+			break;
+		}
+	}
+	static map(e,f) {
+		let edef;
+		switch(e._hx_index) {
+		case 0:
+			edef = e;
+			break;
+		case 1:
+			edef = e;
+			break;
+		case 2:
+			let _g = e.e;
+			edef = hscript_Expr.EVar(e.n,e.t,_g != null ? f(_g) : null);
+			break;
+		case 3:
+			edef = hscript_Expr.EParent(f(e.e));
+			break;
+		case 4:
+			let _g1 = e.e;
+			let _g2 = [];
+			let _g3 = 0;
+			while(_g3 < _g1.length) _g2.push(f(_g1[_g3++]));
+			edef = hscript_Expr.EBlock(_g2);
+			break;
+		case 5:
+			edef = hscript_Expr.EField(f(e.e),e.f);
+			break;
+		case 6:
+			edef = hscript_Expr.EBinop(e.op,f(e.e1),f(e.e2));
+			break;
+		case 7:
+			edef = hscript_Expr.EUnop(e.op,e.prefix,f(e.e));
+			break;
+		case 8:
+			let _g4 = e.params;
+			let edef1 = f(e.e);
+			let _g5 = [];
+			let _g6 = 0;
+			while(_g6 < _g4.length) _g5.push(f(_g4[_g6++]));
+			edef = hscript_Expr.ECall(edef1,_g5);
+			break;
+		case 9:
+			let _g7 = e.e2;
+			edef = hscript_Expr.EIf(f(e.cond),f(e.e1),_g7 != null ? f(_g7) : null);
+			break;
+		case 10:
+			edef = hscript_Expr.EWhile(f(e.cond),f(e.e));
+			break;
+		case 11:
+			edef = hscript_Expr.EFor(e.v,f(e.it),f(e.e));
+			break;
+		case 12:case 13:
+			edef = e;
+			break;
+		case 14:
+			edef = hscript_Expr.EFunction(e.args,f(e.e),e.name,e.ret);
+			break;
+		case 15:
+			let _g8 = e.e;
+			edef = hscript_Expr.EReturn(_g8 != null ? f(_g8) : null);
+			break;
+		case 16:
+			edef = hscript_Expr.EArray(f(e.e),f(e.index));
+			break;
+		case 17:
+			let _g9 = e.e;
+			let _g10 = [];
+			let _g11 = 0;
+			while(_g11 < _g9.length) _g10.push(f(_g9[_g11++]));
+			edef = hscript_Expr.EArrayDecl(_g10);
+			break;
+		case 18:
+			let _g12 = e.params;
+			let _g13 = e.cl;
+			let _g14 = [];
+			let _g15 = 0;
+			while(_g15 < _g12.length) _g14.push(f(_g12[_g15++]));
+			edef = hscript_Expr.ENew(_g13,_g14);
+			break;
+		case 19:
+			edef = hscript_Expr.EThrow(f(e.e));
+			break;
+		case 20:
+			edef = hscript_Expr.ETry(f(e.e),e.v,e.t,f(e.ecatch));
+			break;
+		case 21:
+			let _g16 = e.fl;
+			let _g17 = [];
+			let _g18 = 0;
+			while(_g18 < _g16.length) {
+				let fi = _g16[_g18];
+				++_g18;
+				_g17.push({ name : fi.name, e : f(fi.e)});
+			}
+			edef = hscript_Expr.EObject(_g17);
+			break;
+		case 22:
+			edef = hscript_Expr.ETernary(f(e.cond),f(e.e1),f(e.e2));
+			break;
+		case 23:
+			let _g19 = e.defaultExpr;
+			let _g20 = e.cases;
+			let edef2 = f(e.e);
+			let _g21 = [];
+			let _g22 = 0;
+			while(_g22 < _g20.length) {
+				let c = _g20[_g22];
+				++_g22;
+				let _g = [];
+				let _g1 = 0;
+				let _g2 = c.values;
+				while(_g1 < _g2.length) _g.push(f(_g2[_g1++]));
+				_g21.push({ values : _g, expr : f(c.expr)});
+			}
+			edef = hscript_Expr.ESwitch(edef2,_g21,_g19 == null ? null : f(_g19));
+			break;
+		case 24:
+			edef = hscript_Expr.EDoWhile(f(e.cond),f(e.e));
+			break;
+		case 25:
+			let _g23 = e.e;
+			let _g24 = e.args;
+			let _g25 = e.name;
+			let edef3;
+			if(_g24 == null) {
+				edef3 = null;
+			} else {
+				let _g = [];
+				let _g1 = 0;
+				while(_g1 < _g24.length) _g.push(f(_g24[_g1++]));
+				edef3 = _g;
+			}
+			edef = hscript_Expr.EMeta(_g25,edef3,f(_g23));
+			break;
+		case 26:
+			edef = hscript_Expr.ECheckType(f(e.e),e.t);
+			break;
+		}
+		return edef;
+	}
+	static expr(e) {
+		return e;
+	}
+	static mk(e,p) {
+		return e;
+	}
+}
+$hxClasses["hscript.Tools"] = hscript_Tools;
+hscript_Tools.__name__ = "hscript.Tools";
 class js_Boot {
 	static getClass(o) {
 		if(o == null) {
@@ -30977,6 +37213,25 @@ class js_Boot {
 }
 $hxClasses["js.Boot"] = js_Boot;
 js_Boot.__name__ = "js.Boot";
+class js_node_KeyValue {
+	static get_key(this1) {
+		return this1[0];
+	}
+	static get_value(this1) {
+		return this1[1];
+	}
+}
+js_node_KeyValue.__properties__ = {get_value: "get_value",get_key: "get_key"};
+class js_node_stream_WritableNewOptionsAdapter {
+	static from(options) {
+		if(!Object.prototype.hasOwnProperty.call(options,"final")) {
+			Object.defineProperty(options,"final",{ get : function() {
+				return options.final_;
+			}});
+		}
+		return options;
+	}
+}
 class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 	constructor() {
 		haxe_ui_backend_ComponentSurface._hx_skip_constructor = true;
@@ -31059,72 +37314,75 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 	}
 	setEventSpeed(value) {
 		let tmp = this.debugInfo.eventSpeed;
-		let tmp1;
+		let tmp1 = "" + js_Boot.__cast(value , Int) + ": ";
+		let tmp2;
 		switch(value) {
 		case 1:
-			tmp1 = "X8Slower";
+			tmp2 = "X8Slower";
 			break;
 		case 2:
-			tmp1 = "X4Slower";
+			tmp2 = "X4Slower";
 			break;
 		case 3:
-			tmp1 = "X2Slower";
+			tmp2 = "X2Slower";
 			break;
 		case 4:
-			tmp1 = "Normal";
+			tmp2 = "Normal";
 			break;
 		case 5:
-			tmp1 = "X2Faster";
+			tmp2 = "X2Faster";
 			break;
 		case 6:
-			tmp1 = "X4Faster";
+			tmp2 = "X4Faster";
 			break;
 		default:
-			tmp1 = "";
+			tmp2 = "";
 		}
-		tmp.set_value("" + tmp1 + ":" + js_Boot.__cast(value , Int));
+		tmp.set_value(tmp1 + tmp2);
 	}
 	setEventFrequency(value) {
 		let tmp = this.debugInfo.eventFrequency;
-		let tmp1;
+		let tmp1 = "" + js_Boot.__cast(value , Int) + ": ";
+		let tmp2;
 		switch(value) {
 		case 1:
-			tmp1 = "Lowest";
+			tmp2 = "Lowest";
 			break;
 		case 2:
-			tmp1 = "Lower";
+			tmp2 = "Lower";
 			break;
 		case 3:
-			tmp1 = "Normal";
+			tmp2 = "Normal";
 			break;
 		case 4:
-			tmp1 = "Higher";
+			tmp2 = "Higher";
 			break;
 		case 5:
-			tmp1 = "Highest";
+			tmp2 = "Highest";
 			break;
 		default:
-			tmp1 = "";
+			tmp2 = "";
 		}
-		tmp.set_value("" + tmp1 + ":" + js_Boot.__cast(value , Int));
+		tmp.set_value(tmp1 + tmp2);
 	}
 	setEventPriority(value) {
 		let tmp = this.debugInfo.eventPriority;
-		let tmp1;
+		let tmp1 = "" + js_Boot.__cast(value , Int) + ": ";
+		let tmp2;
 		switch(value) {
 		case 0:
-			tmp1 = "Below characters";
+			tmp2 = "Below characters";
 			break;
 		case 1:
-			tmp1 = "Same as characters";
+			tmp2 = "Same as characters";
 			break;
 		case 2:
-			tmp1 = "Above characters";
+			tmp2 = "Above characters";
 			break;
 		default:
-			tmp1 = "";
+			tmp2 = "";
 		}
-		tmp.set_value("" + tmp1 + ":" + js_Boot.__cast(value , Int));
+		tmp.set_value(tmp1 + tmp2);
 	}
 	registerBehaviours() {
 		super.registerBehaviours();
@@ -31433,17 +37691,194 @@ Object.assign(lunasurveyor_components_DebugInfo.prototype, {
 	,eventFrequency: null
 	,eventCharacterName: null
 });
+class macros_MacroTools {
+}
+$hxClasses["macros.MacroTools"] = macros_MacroTools;
+macros_MacroTools.__name__ = "macros.MacroTools";
 class _$LTGlobals_$ {
 }
 $hxClasses["_LTGlobals_"] = _$LTGlobals_$;
 _$LTGlobals_$.__name__ = "_LTGlobals_";
+class rm_abstracts_objects_GameEvent {
+	static _new(mapId,eventId) {
+		return new Game_Event(mapId,eventId);
+	}
+}
+class rm_abstracts_objects_GameMap {
+	static _new() {
+		return new Game_Map();
+	}
+}
+class rm_types_BalloonId {
+	static toString(value) {
+		switch(value) {
+		case 0:
+			return "Exclamation";
+		case 1:
+			return "Question";
+		case 2:
+			return "Music Note";
+		case 3:
+			return "Heart";
+		case 4:
+			return "Anger";
+		case 5:
+			return "Sweat";
+		case 6:
+			return "Cobweb";
+		case 7:
+			return "Silence";
+		case 8:
+			return "Light Bulb";
+		case 9:
+			return "Zzz";
+		default:
+			return "";
+		}
+	}
+}
+class rm_types_MoveType {
+	static toString(value) {
+		switch(value) {
+		case 0:
+			return "Fixed";
+		case 1:
+			return "Random";
+		case 2:
+			return "Approach";
+		case 3:
+			return "Custom";
+		default:
+			return "Custom";
+		}
+	}
+}
+class rm_types_MoveSpeed {
+	static toString(value) {
+		switch(value) {
+		case 1:
+			return "X8Slower";
+		case 2:
+			return "X4Slower";
+		case 3:
+			return "X2Slower";
+		case 4:
+			return "Normal";
+		case 5:
+			return "X2Faster";
+		case 6:
+			return "X4Faster";
+		default:
+			return "";
+		}
+	}
+}
+class rm_types_MoveFrequency {
+	static toString(value) {
+		switch(value) {
+		case 1:
+			return "Lowest";
+		case 2:
+			return "Lower";
+		case 3:
+			return "Normal";
+		case 4:
+			return "Higher";
+		case 5:
+			return "Highest";
+		default:
+			return "";
+		}
+	}
+}
+class rm_types_CharacterPriority {
+	static toString(value) {
+		switch(value) {
+		case 0:
+			return "Below characters";
+		case 1:
+			return "Same as characters";
+		case 2:
+			return "Above characters";
+		default:
+			return "";
+		}
+	}
+}
+class utils_Comment {
+	static title(title) {
+		return 
+//=============================================================================
+// title
+//=============================================================================
+      ;
+	}
+	static singleLine(message) {
+		return // @message@ ;
+	}
+	static multiLine(message) {
+		return /*
+    message
+    */
+	}
+	static pluginParams(params) {
+		return /*:
+     params
+   */
+	}
+}
+$hxClasses["utils.Comment"] = utils_Comment;
+utils_Comment.__name__ = "utils.Comment";
 class utils_Fn {
+	static get_self() {
+		return this;
+	}
+	static eval(evaluation) {
+		return eval(evaluation);
+	}
+	static embedEval(evaluation) {
+		return eval(evaluation);
+	}
 	static proto(obj) {
 		return obj.prototype;
+	}
+	static setPrProp(obj,fieldName,value) {
+		obj.prototype.fieldName = value;
+	}
+	static setPrPropVoidFn(obj,fieldName,value) {
+		obj.prototype.fieldName = value;
+	}
+	static getPrProp(obj,fieldName) {
+		return obj.prototype.@fieldName@;
+	}
+	static setField(obj,fieldName,value) {
+		return obj[fieldName] = value;
+	}
+	static getByArrSyntax(obj,fieldName) {
+		return obj[fieldName];
+	}
+	static renameClass(originalObj,overrideObj) {
+		return originalObj = overrideObj;
+	}
+	static setProp(obj,propName,value) {
+		return Object.defineProperty(obj,propName,{ value : value});
+	}
+	static setProtoProp(obj,propName,value) {
+		return obj.prototype.@propName@ = value;
+	}
+	static instanceof(v,cl) {
+		return ((v) instanceof cl);
+	}
+	static typeof(v) {
+		return typeof(v);
+	}
+	static log(data) {
+		console.log(data);
 	}
 }
 $hxClasses["utils.Fn"] = utils_Fn;
 utils_Fn.__name__ = "utils.Fn";
+utils_Fn.__properties__ = {get_self: "get_self"};
 function $getIterator(o) { if( o instanceof Array ) return new haxe_iterators_ArrayIterator(o); else return o.iterator(); }
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; }
 $global.$haxeUID |= 0;
@@ -31472,6 +37907,16 @@ DateTools.DAY_SHORT_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 DateTools.DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 DateTools.MONTH_SHORT_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 DateTools.MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+Xml.Element = 0;
+Xml.PCData = 1;
+Xml.CData = 2;
+Xml.Comment = 3;
+Xml.DocType = 4;
+Xml.ProcessingInstruction = 5;
+Xml.Document = 6;
+core_Amaryllis.VERSION = "1.0.0";
+core_Amaryllis.MZ_NAME = rm.core.Utils.RPGMAKER_NAME;
+core_Amaryllis.MZ_VERSION = rm.core.Utils.RPGMAKER_VERSION;
 haxe_crypto_Base64.CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 haxe_crypto_Base64.BYTES = haxe_io_Bytes.ofString(haxe_crypto_Base64.CHARS);
 haxe_ui_backend_BackendImpl.id = "html5";
@@ -31483,6 +37928,7 @@ haxe_ui_backend_ComponentImpl._stylesAdded = false;
 haxe_ui_core_Component.__meta__ = { fields : { styleNames : { clonable : null}, styleString : { clonable : null}}};
 haxe_ui_util_GenericConfig.cache = new haxe_ds_StringMap();
 haxe_ui_Toolkit.styleSheet = new haxe_ui_styles_CompositeStyleSheet();
+haxe_ui_Toolkit.properties = new haxe_ds_StringMap();
 haxe_ui_Toolkit.nativeConfig = new haxe_ui_util_GenericConfig();
 haxe_ui_Toolkit._theme = "default";
 haxe_ui_Toolkit._backendProperties = new haxe_ui_util_Properties();
@@ -31545,20 +37991,97 @@ haxe_ui_backend_html5_EventMapper.MOUSE_TO_TOUCH = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
+haxe_ui_backend_html5_EventMapper.TOUCH_TO_MOUSE = (function($this) {
+	var $r;
+	let _g = new haxe_ds_StringMap();
+	_g.h["touchmove"] = "mousemove";
+	_g.h["touchstart"] = "mouseout";
+	_g.h["touchend"] = "mousedown";
+	$r = _g;
+	return $r;
+}(this));
 haxe_ui_backend_html5_HtmlUtils._dpi = 0;
 haxe_ui_behaviours_Behaviour._hx_skip_constructor = false;
 haxe_ui_core_CompositeBuilder._hx_skip_constructor = false;
 haxe_ui_layouts_Layout._hx_skip_constructor = false;
 haxe_ui_backend_html5_util_FontDetect._initialized = false;
 haxe_ui_backend_html5_util_FontDetect._aFallbackFonts = ["serif","sans-serif","monospace","cursive","fantasy"];
+haxe_ui_binding_BindingManager.bindingInfo = new haxe_ds_ObjectMap();
 haxe_ui_binding_BindingManager.targets = new haxe_ds_StringMap();
 haxe_ui_events_Events._hx_skip_constructor = false;
 haxe_ui_events_UIEvent._hx_skip_constructor = false;
+haxe_ui_events_UIEvent.READY = "ready";
+haxe_ui_events_UIEvent.RESIZE = "resize";
+haxe_ui_events_UIEvent.CHANGE = "change";
+haxe_ui_events_UIEvent.BEFORE_CHANGE = "beforeChange";
+haxe_ui_events_UIEvent.MOVE = "move";
+haxe_ui_events_UIEvent.INITIALIZE = "initialize";
+haxe_ui_events_UIEvent.RENDERER_CREATED = "rendererCreated";
+haxe_ui_events_UIEvent.RENDERER_DESTROYED = "rendererDestroyed";
+haxe_ui_events_UIEvent.HIDDEN = "hidden";
+haxe_ui_events_UIEvent.SHOWN = "shown";
+haxe_ui_events_UIEvent.ENABLED = "enabled";
+haxe_ui_events_UIEvent.DISABLED = "disabled";
+haxe_ui_events_UIEvent.BEFORE_CLOSE = "beforeClose";
+haxe_ui_events_UIEvent.CLOSE = "close";
+haxe_ui_components_CalendarEvent.DATE_CHANGE = "datechange";
 haxe_ui_components_DropDownHandler._hx_skip_constructor = false;
 haxe_ui_components_CalendarDropDownHandler.DATE_FORMAT = "%d/%m/%Y";
 haxe_ui_components_DropDownBuilder.HANDLER_MAP = new haxe_ds_StringMap();
+haxe_ui_components__$TabBar_Builder.SCROLL_INCREMENT = 20;
 haxe_ui_containers_CalendarView.MONTH_NAMES = ["January","Febuary","March","April","May","June","July","August","September","October","November","December"];
+haxe_ui_containers_CalendarView.DATE_FORMAT = "%Y-%m-%d";
+haxe_ui_containers_ScrollViewEvents.INERTIAL_TIME_CONSTANT = 325;
 haxe_ui_core_ItemRenderer.__meta__ = { fields : { allowHover : { clonable : null}}};
+haxe_ui_containers_dialogs_DialogButton.SAVE = "Save";
+haxe_ui_containers_dialogs_DialogButton.YES = "Yes";
+haxe_ui_containers_dialogs_DialogButton.NO = "No";
+haxe_ui_containers_dialogs_DialogButton.CLOSE = "Close";
+haxe_ui_containers_dialogs_DialogButton.OK = "OK";
+haxe_ui_containers_dialogs_DialogButton.CANCEL = "Cancel";
+haxe_ui_containers_dialogs_DialogButton.APPLY = "Apply";
+haxe_ui_containers_dialogs_DialogEvent.DIALOG_CLOSED = "dialogClosed";
+haxe_ui_containers_dialogs_MessageBoxType.TYPE_INFO = "info";
+haxe_ui_containers_dialogs_MessageBoxType.TYPE_QUESTION = "question";
+haxe_ui_containers_dialogs_MessageBoxType.TYPE_WARNING = "warning";
+haxe_ui_containers_dialogs_MessageBoxType.TYPE_ERROR = "error";
+haxe_ui_containers_menus_MenuEvent.MENU_SELECTED = "menuselected";
+haxe_ui_core_ComponentFieldMap.MAP = (function($this) {
+	var $r;
+	let _g = new haxe_ds_StringMap();
+	_g.h["group"] = "componentGroup";
+	_g.h["contentLayout"] = "contentLayoutName";
+	$r = _g;
+	return $r;
+}(this));
+haxe_ui_core_Platform.METRIC_VSCROLL_WIDTH = "patform.metrics.vscroll.width";
+haxe_ui_core_Platform.METRIC_HSCROLL_HEIGHT = "patform.metrics.hscroll.height";
+haxe_ui_events_AnimationEvent.START = "animationstart";
+haxe_ui_events_AnimationEvent.END = "animationend";
+haxe_ui_events_FocusEvent.FOCUS_IN = "focusin";
+haxe_ui_events_FocusEvent.FOCUS_OUT = "focusout";
+haxe_ui_events_ItemEvent.COMPONENT_EVENT = "itemComponentEvent";
+haxe_ui_events_KeyboardEvent.KEY_TAB = 9;
+haxe_ui_events_KeyboardEvent.KEY_DOWN = "keydown";
+haxe_ui_events_KeyboardEvent.KEY_UP = "keyup";
+haxe_ui_events_MouseEvent.MOUSE_MOVE = "mousemove";
+haxe_ui_events_MouseEvent.MOUSE_OVER = "mouseover";
+haxe_ui_events_MouseEvent.MOUSE_OUT = "mouseout";
+haxe_ui_events_MouseEvent.MOUSE_DOWN = "mousedown";
+haxe_ui_events_MouseEvent.MOUSE_UP = "mouseup";
+haxe_ui_events_MouseEvent.MOUSE_WHEEL = "mousewheel";
+haxe_ui_events_MouseEvent.CLICK = "click";
+haxe_ui_events_MouseEvent.DBL_CLICK = "doubleclick";
+haxe_ui_events_MouseEvent.RIGHT_CLICK = "rightclick";
+haxe_ui_events_MouseEvent.RIGHT_MOUSE_DOWN = "rightmousedown";
+haxe_ui_events_MouseEvent.RIGHT_MOUSE_UP = "rightmouseup";
+haxe_ui_events_ScrollEvent.CHANGE = "scrollchange";
+haxe_ui_events_ScrollEvent.START = "scrollstart";
+haxe_ui_events_ScrollEvent.STOP = "scrollstop";
+haxe_ui_events_ValidationEvent.START = "ValidationStart";
+haxe_ui_events_ValidationEvent.STOP = "ValidationStop";
+haxe_ui_parsers_ui_ComponentParser._nextId = 0;
+haxe_ui_styles_Parser.cssRegex = new EReg("([\\s\\S]*?)\\{([\\s\\S]*?)\\}","gi");
 haxe_ui_styles_Parser.cssKeyframesRegex = new EReg("@keyframes\\s*(\\w+?)\\s*\\{([\\s\\S]*?\\}\\s*?)\\}","gi");
 haxe_ui_styles_Parser.cssKeyframeSelectorRegex = new EReg("([\\w%]+)\\s*\\{\\s*([\\s\\S]*?)\\s*\\}","gi");
 haxe_ui_styles_Parser.combinedCSSMediaRegex = new EReg("((\\s*?(?:/\\*[\\s\\S]*?\\*/)?\\s*?@media[\\s\\S]*?)\\{([\\s\\S]*?)\\}\\s*?\\})|(([\\s\\S]*?)\\{([\\s\\S]*?)\\})","gi");
@@ -31589,9 +38112,60 @@ haxe_ui_styles_ValueTools.colors = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
+haxe_ui_styles_animation_AnimationOptions.DEFAULT_DURATION = 0;
+haxe_ui_styles_animation_AnimationOptions.DEFAULT_DELAY = 0;
+haxe_ui_styles_animation_AnimationOptions.DEFAULT_ITERATION_COUNT = 1;
 haxe_ui_styles_animation_AnimationOptions.DEFAULT_EASING_FUNCTION = haxe_ui_styles_EasingFunction.EASE;
+haxe_ui_styles_animation_AnimationOptions.DEFAULT_DIRECTION = "normal";
+haxe_ui_styles_animation_AnimationOptions.DEFAULT_FILL_MODE = "forwards";
+haxe_ui_util_MathUtil.MAX_INT = 2147483647;
+haxe_ui_util_MathUtil.MIN_INT = -2147483648;
 haxe_ui_util_StyleUtil.style2ComponentEReg = new EReg("-(\\w)","g");
+haxe_ui_util_StyleUtil.component2StyleEReg = new EReg("([A-Z])","g");
+haxe_xml_Parser.escapes = (function($this) {
+	var $r;
+	let h = new haxe_ds_StringMap();
+	h.h["lt"] = "<";
+	h.h["gt"] = ">";
+	h.h["amp"] = "&";
+	h.h["quot"] = "\"";
+	h.h["apos"] = "'";
+	$r = h;
+	return $r;
+}(this));
+hscript_Parser.p1 = 0;
+hscript_Parser.tokenMin = 0;
+hscript_Parser.tokenMax = 0;
 lunasurveyor_LunaDebug.mainView = new lunasurveyor_components_MainView();
 lunasurveyor_Luna_$Surveyor.surveyorEmitter = new PIXI.utils.EventEmitter();
+rm_types_BalloonId.EXCLAMATION = 0;
+rm_types_BalloonId.QUESTION = 1;
+rm_types_BalloonId.MUSIC_NOTE = 2;
+rm_types_BalloonId.HEART = 3;
+rm_types_BalloonId.ANGER = 4;
+rm_types_BalloonId.SWEAT = 5;
+rm_types_BalloonId.COBWEB = 6;
+rm_types_BalloonId.SILENCE = 7;
+rm_types_BalloonId.LIGHT_BULB = 8;
+rm_types_BalloonId.ZZZ = 9;
+rm_types_MoveType.__meta__ = { statics : { toString : { from : null}}};
+rm_types_MoveType.FIXED = 0;
+rm_types_MoveType.RANDOM = 1;
+rm_types_MoveType.APPROACH = 2;
+rm_types_MoveType.CUSTOM = 3;
+rm_types_MoveSpeed.X8SLOWER = 1;
+rm_types_MoveSpeed.X4SLOWER = 2;
+rm_types_MoveSpeed.X2SLOWER = 3;
+rm_types_MoveSpeed.NORMAL = 4;
+rm_types_MoveSpeed.X2FASTER = 5;
+rm_types_MoveSpeed.X4FASTER = 6;
+rm_types_MoveFrequency.LOWEST = 1;
+rm_types_MoveFrequency.LOWER = 2;
+rm_types_MoveFrequency.NORMAL = 3;
+rm_types_MoveFrequency.HIGHER = 4;
+rm_types_MoveFrequency.HIGHEST = 5;
+rm_types_CharacterPriority.BELOW_CHARACTERS = 0;
+rm_types_CharacterPriority.SAME_AS_CHARACTERS = 1;
+rm_types_CharacterPriority.ABOVE_CHARACTERS = 2;
 lunasurveyor_Luna_$Surveyor.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
