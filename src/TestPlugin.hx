@@ -1,10 +1,10 @@
 import macros.MacroTools;
-import mz.windows.Window_Message;
-import mz.managers.PluginManager;
+import rm.windows.Window_Message;
+import rm.managers.PluginManager;
 import utils.Fn;
 import utils.Comment;
-import mz.windows.Window_Message;
-import mz.sprites.Sprite_Base;
+import rm.windows.Window_Message;
+import rm.sprites.Sprite_Base;
 
 using core.StringExtensions;
 using Std;

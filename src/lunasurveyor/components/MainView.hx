@@ -1,8 +1,8 @@
 package lunasurveyor.components;
 
-import mz.types.LunaTea.CharacterPriority;
-import mz.types.LunaTea.MoveSpeed;
-import mz.types.LunaTea.MoveFrequency;
+import rm.types.LunaTea.CharacterPriority;
+import rm.types.LunaTea.MoveSpeed;
+import rm.types.LunaTea.MoveFrequency;
 import haxe.ui.containers.VBox;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
@@ -67,15 +67,15 @@ import haxe.ui.events.UIEvent;
  }
 
  public function setEventSpeed(value: MoveSpeed) {
-  this.debugInfo.eventSpeed.value = '${value.toString()}:${cast (value, Int)}';
+  this.debugInfo.eventSpeed.value = '${cast (value, Int)}: ${value.toString()}';
  }
 
  public function setEventFrequency(value: MoveFrequency) {
-  this.debugInfo.eventFrequency.value = '${value.toString()}:${cast (value, Int)}';
+  this.debugInfo.eventFrequency.value = '${cast (value, Int)}: ${value.toString()}';
  }
 
  public function setEventPriority(value: CharacterPriority) {
-  this.debugInfo.eventPriority.value = '${value.toString()}:${cast (value, Int)}';
+  this.debugInfo.eventPriority.value = '${cast (value, Int)}: ${value.toString()}';
  }
 }
 

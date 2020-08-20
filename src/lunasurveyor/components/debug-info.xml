@@ -12,7 +12,6 @@
       <property id="eventSpeed" label="Event Speed" value="" /> 
       <property id="eventFrequency" label="Event Frequency" value="" />
       <property id="eventPriority" label="Event Priority" value="" />
-      
     </property-group>
   </property-grid>
 </vbox>

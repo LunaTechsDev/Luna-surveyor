@@ -1,12 +1,12 @@
 package lunasurveyor;
 
-import mz.Globals;
-import mz.scenes.Scene_Map;
+import rm.Globals;
+import rm.scenes.Scene_Map;
 import haxe.Timer;
 import lunasurveyor.Events.SCustomEvents;
 import core.Amaryllis;
 import utils.Fn;
-import mz.scenes.Scene_Base;
+import rm.scenes.Scene_Base;
 import utils.Comment;
 import macros.MacroTools;
 

@@ -1,12 +1,12 @@
 package lunasurveyor;
 
 import core.Amaryllis;
-import mz.abstracts.managers.SceneMgr;
-import mz.Globals;
-import mz.abstracts.objects.GameMap;
+import rm.abstracts.managers.SceneMgr;
+import rm.Globals;
+import rm.abstracts.objects.GameMap;
 import js.html.MouseEvent;
 import lunasurveyor.Events.SCustomEvents;
-import mz.abstracts.objects.GameEvent;
+import rm.abstracts.objects.GameEvent;
 import js.Browser;
 import haxe.ui.Toolkit;
 import lunasurveyor.components.MainView;

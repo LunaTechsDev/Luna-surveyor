@@ -37,4 +37,4 @@
 --next
 LunaSurveyor.hxml
 
---cmd haxe -D gamePath=games/KinoCreates --run CleanJs
+--cmd haxe -D gamePath=games/LunaTechsMZ --run CleanJs
