@@ -1,0 +1,4 @@
+# @install: lix --silent download "haxelib:/haxeui-theme-kenney#1.1.0" into haxeui-theme-kenney/1.1.0/haxelib
+-lib haxeui-core
+-cp ${HAXE_LIBCACHE}/haxeui-theme-kenney/1.1.0/haxelib/
+-D haxeui-theme-kenney=1.1.0

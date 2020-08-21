@@ -2,6 +2,7 @@ package lunasurveyor;
 
 import rm.Globals;
 import rm.scenes.Scene_Map;
+import rm.objects.Game_Player;
 import haxe.Timer;
 import lunasurveyor.Events.SCustomEvents;
 import core.Amaryllis;
@@ -22,11 +23,13 @@ class Luna_Surveyor {
 
   surveyorEmitter.on(SCustomEvents.ON_MAP, () -> {
    LunaDebug.setMapInfo(Globals.GameMap);
+   LunaDebug.setPartyInfo(Globals.GameParty);
   });
 
   Comment.title("Base Class Overrides");
   var SurveyorSceneBase = Fn.renameClass(Scene_Base, SurveyorSceneBaseExt);
   var SurveyorSceneMap = Fn.renameClass(Scene_Map, SurveyorSceneMapExt);
+  var SurveyorGamePlayer = Fn.renameClass(Game_Player, SurveyorGamePlayerExt);
  }
 
  public static function setupDebugTool() {
@@ -60,5 +63,20 @@ class SurveyorSceneMapExt extends Scene_Map {
  override public function onMapLoaded() {
   super.onMapLoaded();
   Luna_Surveyor.surveyorEmitter.emit(SCustomEvents.ON_MAP);
+ }
+}
+
+class SurveyorGamePlayerExt extends Game_Player {
+ public function new() {
+  super();
+ }
+
+ override public function canMove() {
+  var result = super.canMove();
+  if (LunaDebug.isOpen) {
+   return false;
+  } else {
+   return result;
+  }
  }
 }

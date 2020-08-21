@@ -1,5 +1,6 @@
 package lunasurveyor;
 
+import rm.abstracts.objects.GameParty;
 import core.Amaryllis;
 import rm.abstracts.managers.SceneMgr;
 import rm.Globals;
@@ -13,11 +14,13 @@ import lunasurveyor.components.MainView;
 
 class LunaDebug {
  public static var mainView = new MainView();
+ public static var isOpen: Bool = true;
 
  public static function initializeDebug() {
   Toolkit.init({
    container: Browser.document.body,
   });
+  // Toolkit.theme = 'kenney';
   var element = Browser.document.createElement("style");
 
   element.textContent = ".haxeui-component {z-Index:150}";
@@ -46,12 +49,21 @@ class LunaDebug {
  }
 
  public static function setMapInfo(map: GameMap) {
+  mainView.setMapName(map.displayName());
   mainView.setMapWidth(map.width());
   mainView.setMapHeight(map.height());
  }
 
+ public static function setPartyInfo(party: GameParty) {
+  mainView.setNumMembers(party.members().length);
+  mainView.setGold(party.gold());
+  mainView.setPartyMembers(party.members());
+ }
+
  public static function setEventInformation(event: GameEvent) {
-  mainView.setEventName(event.characterName());
+  mainView.setEventName(event.event().name);
+  mainView.setEventSpriteSheetName(event.characterName(),
+   event.characterIndex());
   mainView.setEventId(event.eventId());
   mainView.setEventXCoordinate(event.x);
   mainView.setEventYCoordinate(event.y);

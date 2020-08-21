@@ -1,17 +1,49 @@
-<vbox style="background-color:white;">
-  <property-grid id="infoGrid" width="250" autoHeight="true">
-    <property-group id="mapGroup" text="Map Information">
-      <property id="mapWidth" label="Width" type="int" value="0" />
-      <property id="mapHeight" label="Height" type="int" value="0" />
-    </property-group>
-    <property-group id="eventGroup" text="Event Information">
-      <property id="eventCharacterName" label="Character Name" value="" />
-      <property id="eventId" label="Event Id" type="int" value="0"/> 
-      <property id="eventXCoordinate" label="X" type="int" value="0" />
-      <property id="eventYCoordinate" label="Y" type="int" value="0" />
-      <property id="eventSpeed" label="Event Speed" value="" /> 
-      <property id="eventFrequency" label="Event Frequency" value="" />
-      <property id="eventPriority" label="Event Priority" value="" />
-    </property-group>
-  </property-grid>
+<vbox>
+  <!-- Tab View For Debug Information & Controls -->
+  <tabview width="250" height="400" autoHeight="true">
+
+    <box style="background-color: transparent;" width="100%" height="100%" autoHeight="true" text="Map Information">
+
+      <property-grid id="infoGrid" width="100%" autoHeight="true">
+        <property-group id="mapGroup" text="Map Information">
+          <property id="mapName" label="Name" value="" />
+          <property id="mapWidth" label="Width" type="int" value="0" />
+          <property id="mapHeight" label="Height" type="int" value="0" />
+        </property-group>
+        <property-group id="eventGroup" text="Event Information">
+          <property id="eventName" label="Event Name" value="" />
+          <property id="eventSpriteSheetName" label="Sprite Sheet Name" value="" />
+          <property id="eventId" label="Event Id" type="int" value="0" />
+          <property id="eventXCoordinate" label="X" type="int" value="0" />
+          <property id="eventYCoordinate" label="Y" type="int" value="0" />
+          <property id="eventSpeed" label="Event Speed" value="" />
+          <property id="eventFrequency" label="Event Frequency" value="" />
+          <property id="eventPriority" label="Event Priority" value="" />
+        </property-group>
+      </property-grid>
+
+    </box>
+    <box text="Party Information" width="100%" height="100%" autoHeight="true">
+      <vbox>
+        <property-grid id="partyGrid" width="100%" autoHeight="true">
+          <property-group id="partyGroup">
+            <property id="numMembers" label="Num Party Members" type="int" value="" />
+            <property id="gold" label="Gold" type="int" value="0" />
+          </property-group>
+        </property-grid>
+        <vbox>
+          <label text="Party Members" textAlign="center" width="100%" style="font-size:18px; color:black" />
+          <listview id="partyMemberList" width="200" height="150" autoHeight="true" selectedIndex="0">
+            <item-renderer layoutName="horizontal" width="100%">
+              <label width="100%" id="actorName" style="color:black;" />
+            </item-renderer>
+            <data></data>
+          </listview>
+        </vbox>
+      </vbox>
+
+
+    </box>
+
+  </tabview>
 </vbox>

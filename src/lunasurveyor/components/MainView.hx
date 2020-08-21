@@ -6,6 +6,7 @@ import rm.types.LunaTea.MoveFrequency;
 import haxe.ui.containers.VBox;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
+import rm.abstracts.objects.GameActor;
 
 @:build(haxe.ui.macros.ComponentMacros.build("src/lunasurveyor/components/main.xml")) class MainView extends VBox {
  public var menu: Menu = new Menu();
@@ -28,6 +29,7 @@ import haxe.ui.events.UIEvent;
  @:bind(this.menu.showDebug, MouseEvent.CLICK)
  public function showDebugTools(event: MouseEvent) {
   this.debugInfoContainer.show();
+  LunaDebug.isOpen = true;
  }
 
  /**
@@ -36,11 +38,16 @@ import haxe.ui.events.UIEvent;
  @:bind(this.menu.hideDebug, MouseEvent.CLICK)
  public function hideDebugTools(event: MouseEvent) {
   this.debugInfoContainer.hide();
+  LunaDebug.isOpen = false;
  }
 
  // ========================================
  // Tracking changes for debug information
  // @:bind(this.debugInfo.infoGrid, UIEvent.CHANGE)
+
+ public function setMapName(value: String) {
+  this.debugInfo.mapName.value = value;
+ }
 
  public function setMapWidth(value: Int) {
   this.debugInfo.mapWidth.value = value;
@@ -51,7 +58,11 @@ import haxe.ui.events.UIEvent;
  }
 
  public function setEventName(value: String) {
-  this.debugInfo.eventCharacterName.value = value;
+  this.debugInfo.eventName.value = value;
+ }
+
+ public function setEventSpriteSheetName(value: String, index: Int) {
+  this.debugInfo.eventSpriteSheetName.value = '${value}_${index}';
  }
 
  public function setEventId(value: Int) {
@@ -76,6 +87,22 @@ import haxe.ui.events.UIEvent;
 
  public function setEventPriority(value: CharacterPriority) {
   this.debugInfo.eventPriority.value = '${cast (value, Int)}: ${value.toString()}';
+ }
+
+ public function setNumMembers(value: Int) {
+  this.debugInfo.numMembers.value = value;
+ }
+
+ public function setGold(value: Int) {
+  this.debugInfo.gold.value = value;
+ }
+
+ public function setPartyMembers(members: Array<GameActor>) {
+  for (member in members) {
+   this.debugInfo.partyMemberList.dataSource.add({
+    actorName: member.name()
+   });
+  }
  }
 }
 
