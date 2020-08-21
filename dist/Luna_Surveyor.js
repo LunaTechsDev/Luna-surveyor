@@ -2,7 +2,7 @@
 // Luna_Surveyor.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-20 21:27:11
+// Build Date: 2020-08-20 22:40:18
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -4947,6 +4947,17 @@ class haxe_ui_core_Component extends haxe_ui_backend_ComponentImpl {
 		}
 		return value;
 	}
+	set_onChange(value) {
+		if(this.__onChange != null) {
+			this.unregisterEvent("change",this.__onChange);
+			this.__onChange = null;
+		}
+		if(value != null) {
+			this.__onChange = value;
+			this.registerEvent("change",value);
+		}
+		return value;
+	}
 	static addNamedComponentsFrom(parent,list) {
 		if(parent == null) {
 			return;
@@ -4995,7 +5006,9 @@ Object.assign(haxe_ui_core_Component.prototype, {
 	,onAnimationEnd: null
 	,__onClick: null
 	,onClick: null
-	,__properties__: Object.assign({}, haxe_ui_backend_ComponentImpl.prototype.__properties__, {set_onClick: "set_onClick",set_onAnimationEnd: "set_onAnimationEnd",set_onAnimationStart: "set_onAnimationStart",set_verticalAlign: "set_verticalAlign",set_horizontalAlign: "set_horizontalAlign",set_opacity: "set_opacity",get_paddingTop: "get_paddingTop",get_paddingLeft: "get_paddingLeft",get_cssName: "get_cssName",get_namedComponents: "get_namedComponents",set_layout: "set_layout",get_layout: "get_layout",set_includeInLayout: "set_includeInLayout",get_includeInLayout: "get_includeInLayout",get_styleSheet: "get_styleSheet",set_styleString: "set_styleString",get_styleString: "get_styleString",set_styleNames: "set_styleNames",get_styleNames: "get_styleNames",set_customStyle: "set_customStyle",set_hidden: "set_hidden",get_hidden: "get_hidden",get_numComponents: "get_numComponents",get_rootComponent: "get_rootComponent",get_screen: "get_screen",set_componentAnimation: "set_componentAnimation",get_componentAnimation: "get_componentAnimation",set_native: "set_native",get_native: "get_native"})
+	,__onChange: null
+	,onChange: null
+	,__properties__: Object.assign({}, haxe_ui_backend_ComponentImpl.prototype.__properties__, {set_onChange: "set_onChange",set_onClick: "set_onClick",set_onAnimationEnd: "set_onAnimationEnd",set_onAnimationStart: "set_onAnimationStart",set_verticalAlign: "set_verticalAlign",set_horizontalAlign: "set_horizontalAlign",set_opacity: "set_opacity",get_paddingTop: "get_paddingTop",get_paddingLeft: "get_paddingLeft",get_cssName: "get_cssName",get_namedComponents: "get_namedComponents",set_layout: "set_layout",get_layout: "get_layout",set_includeInLayout: "set_includeInLayout",get_includeInLayout: "get_includeInLayout",get_styleSheet: "get_styleSheet",set_styleString: "set_styleString",get_styleString: "get_styleString",set_styleNames: "set_styleNames",get_styleNames: "get_styleNames",set_customStyle: "set_customStyle",set_hidden: "set_hidden",get_hidden: "get_hidden",get_numComponents: "get_numComponents",get_rootComponent: "get_rootComponent",get_screen: "get_screen",set_componentAnimation: "set_componentAnimation",get_componentAnimation: "get_componentAnimation",set_native: "set_native",get_native: "get_native"})
 });
 class haxe_ui_util_Properties {
 	constructor() {
@@ -14945,6 +14958,74 @@ Object.assign(haxe_ui_components__$Stepper_Events.prototype, {
 	__class__: haxe_ui_components__$Stepper_Events
 	,_stepper: null
 });
+class haxe_ui_components_Switch extends haxe_ui_core_Component {
+	constructor() {
+		super();
+	}
+	registerComposite() {
+		super.registerComposite();
+		this._compositeBuilderClass = haxe_ui_components__$Switch_Builder;
+		this._defaultLayoutClass = haxe_ui_layouts_HorizontalLayout;
+	}
+	registerBehaviours() {
+		super.registerBehaviours();
+		this.behaviours.register("selected",haxe_ui_components__$Switch_SelectedBehaviour);
+		this.behaviours.register("value",haxe_ui_behaviours_DefaultBehaviour);
+		this.behaviours.register("text",haxe_ui_components__$Switch_TextBehaviour);
+		this.behaviours.register("textOn",haxe_ui_behaviours_DefaultBehaviour);
+		this.behaviours.register("textOff",haxe_ui_behaviours_DefaultBehaviour);
+	}
+	get_selected() {
+		return haxe_ui_util_Variant.toBool(this.behaviours.get("selected"));
+	}
+	set_selected(value) {
+		this.behaviours.set("selected",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"selected");
+		return value;
+	}
+	get_textOn() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("textOn"));
+	}
+	set_textOn(value) {
+		this.behaviours.set("textOn",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"textOn");
+		return value;
+	}
+	get_textOff() {
+		return haxe_ui_util_Variant.toString(this.behaviours.get("textOff"));
+	}
+	set_textOff(value) {
+		this.behaviours.set("textOff",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"textOff");
+		return value;
+	}
+	cloneComponent() {
+		let c = super.cloneComponent();
+		c.set_selected(this.get_selected());
+		if(this.get_textOn() != null) {
+			c.set_textOn(this.get_textOn());
+		}
+		if(this.get_textOff() != null) {
+			c.set_textOff(this.get_textOff());
+		}
+		if((this._children == null ? [] : this._children).length != (c._children == null ? [] : c._children).length) {
+			let _g = 0;
+			let _g1 = this._children == null ? [] : this._children;
+			while(_g < _g1.length) c.addComponent(_g1[_g++].cloneComponent());
+		}
+		return c;
+	}
+	self() {
+		return new haxe_ui_components_Switch();
+	}
+}
+$hxClasses["haxe.ui.components.Switch"] = haxe_ui_components_Switch;
+haxe_ui_components_Switch.__name__ = "haxe.ui.components.Switch";
+haxe_ui_components_Switch.__super__ = haxe_ui_core_Component;
+Object.assign(haxe_ui_components_Switch.prototype, {
+	__class__: haxe_ui_components_Switch
+	,__properties__: Object.assign({}, haxe_ui_core_Component.prototype.__properties__, {set_textOff: "set_textOff",get_textOff: "get_textOff",set_textOn: "set_textOn",get_textOn: "get_textOn",set_selected: "set_selected",get_selected: "get_selected"})
+});
 class haxe_ui_components__$Switch_SelectedBehaviour extends haxe_ui_behaviours_DataBehaviour {
 	constructor(component) {
 		super(component);
@@ -14986,6 +15067,31 @@ haxe_ui_components__$Switch_TextBehaviour.__name__ = "haxe.ui.components._Switch
 haxe_ui_components__$Switch_TextBehaviour.__super__ = haxe_ui_behaviours_DataBehaviour;
 Object.assign(haxe_ui_components__$Switch_TextBehaviour.prototype, {
 	__class__: haxe_ui_components__$Switch_TextBehaviour
+});
+class haxe_ui_components__$Switch_Builder extends haxe_ui_core_CompositeBuilder {
+	constructor(s) {
+		super(s);
+		this._switch = s;
+	}
+	create() {
+		let _gthis = this;
+		if(this._button == null) {
+			this._button = new haxe_ui_components__$Switch_SwitchButtonSub();
+			this._button.set_onChange(function(e) {
+				_gthis._switch.set_selected(_gthis._button.get_selected());
+				_gthis._switch.dispatch(new haxe_ui_events_UIEvent("change"));
+			});
+			this._component.addComponent(this._button);
+		}
+	}
+}
+$hxClasses["haxe.ui.components._Switch.Builder"] = haxe_ui_components__$Switch_Builder;
+haxe_ui_components__$Switch_Builder.__name__ = "haxe.ui.components._Switch.Builder";
+haxe_ui_components__$Switch_Builder.__super__ = haxe_ui_core_CompositeBuilder;
+Object.assign(haxe_ui_components__$Switch_Builder.prototype, {
+	__class__: haxe_ui_components__$Switch_Builder
+	,_switch: null
+	,_button: null
 });
 class haxe_ui_components__$Switch_SwitchButtonSub extends haxe_ui_core_InteractiveComponent {
 	constructor() {
@@ -31092,23 +31198,37 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallRunBtn" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c7 = this.menu.hideDebug;
+		let c7 = this.debugInfo.scriptCallBox;
 		if(c7 != null) {
-			c7.registerEvent("click",$bind(this,this.hideDebugTools));
+			c7.registerEvent("keyup",$bind(this,this.handleKeyboardEvents));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallBox" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c8 = this.menu.hideDebug;
+		if(c8 != null) {
+			c8.registerEvent("click",$bind(this,this.hideDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.hideDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c8 = this.menu.showDebug;
-		if(c8 != null) {
-			c8.registerEvent("click",$bind(this,this.showDebugTools));
+		let c9 = this.menu.showDebug;
+		if(c9 != null) {
+			c9.registerEvent("click",$bind(this,this.showDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.showDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c10 = this.menu.openConsole;
+		if(c10 != null) {
+			c10.registerEvent("click",$bind(this,this.openNwJsConsole));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.openConsole" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
 		this.setupElements();
 	}
 	setupElements() {
 		this.menuContainer.addComponent(this.menu);
 		this.debugInfoContainer.addComponent(this.debugInfo);
+	}
+	openNwJsConsole(event) {
 	}
 	showDebugTools(event) {
 		this.debugInfoContainer.show();
@@ -31227,9 +31347,15 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 			this.debugInfo.partyMemberList.get_dataSource().add({ actorName : member.name()});
 		}
 	}
+	handleKeyboardEvents(event) {
+		haxe_Log.trace(this.debugInfo.scriptCallBox.get_text(),{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 123, className : "lunasurveyor.components.MainView", methodName : "handleKeyboardEvents"});
+		haxe_Log.trace("KeyCode",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 124, className : "lunasurveyor.components.MainView", methodName : "handleKeyboardEvents", customParams : [event.keyCode]});
+		this.debugInfo.scriptCallBox.get_value();
+	}
 	runScriptCall(event) {
 		let code = this.debugInfo.scriptCallBox.get_value();
-		console.log("Script Call Evaluation Result = ",eval(code));
+		let result = eval(code);
+		utils_Fn.JsLog("Script Call Evaluation Result = ",result);
 	}
 	clearScriptCallText(event) {
 		this.debugInfo.scriptCallBox.set_value("");
@@ -31396,37 +31522,45 @@ class lunasurveyor_components_Menu extends haxe_ui_containers_VBox {
 		c0.set_percentWidth(100.);
 		c0.set_styleString("background-color:white;");
 		let c1 = new haxe_ui_containers_menus_Menu();
-		c1.set_text("Preferences");
+		c1.set_text("Edit");
 		let c2 = new haxe_ui_containers_menus_MenuItem();
-		c2.set_id("showDebug");
-		c2.set_text("Show Debug");
+		c2.set_id("openConsole");
+		c2.set_text("Open Console");
 		c1.addComponent(c2);
-		let c3 = new haxe_ui_containers_menus_MenuItem();
-		c3.set_id("hideDebug");
-		c3.set_text("Hide Debug");
-		c1.addComponent(c3);
-		let c4 = new haxe_ui_containers_menus_MenuItem();
-		c4.set_id("enableInteractions");
-		c4.set_text("Enable Interactions");
-		c1.addComponent(c4);
-		let c5 = new haxe_ui_containers_menus_MenuItem();
-		c5.set_id("disableInteractions");
-		c5.set_text("Disable Interactions");
-		c1.addComponent(c5);
 		c0.addComponent(c1);
-		let c6 = new haxe_ui_containers_menus_Menu();
-		c6.set_text("Help");
+		let c3 = new haxe_ui_containers_menus_Menu();
+		c3.set_text("Preferences");
+		let c4 = new haxe_ui_containers_menus_MenuItem();
+		c4.set_id("showDebug");
+		c4.set_text("Show Debug");
+		c3.addComponent(c4);
+		let c5 = new haxe_ui_containers_menus_MenuItem();
+		c5.set_id("hideDebug");
+		c5.set_text("Hide Debug");
+		c3.addComponent(c5);
+		let c6 = new haxe_ui_containers_menus_MenuItem();
+		c6.set_id("enableInteractions");
+		c6.set_text("Enable Interactions");
+		c3.addComponent(c6);
 		let c7 = new haxe_ui_containers_menus_MenuItem();
-		c7.set_text("Documentation");
-		c6.addComponent(c7);
-		c0.addComponent(c6);
+		c7.set_id("disableInteractions");
+		c7.set_text("Disable Interactions");
+		c3.addComponent(c7);
+		c0.addComponent(c3);
+		let c8 = new haxe_ui_containers_menus_Menu();
+		c8.set_text("Help");
+		let c9 = new haxe_ui_containers_menus_MenuItem();
+		c9.set_text("Documentation");
+		c8.addComponent(c9);
+		c0.addComponent(c8);
 		this.addComponent(c0);
 		this.set_percentWidth(100.);
 		this.bindingRoot = true;
-		this.showDebug = c2;
-		this.hideDebug = c3;
-		this.enableInteractions = c4;
-		this.disableInteractions = c5;
+		this.showDebug = c4;
+		this.openConsole = c2;
+		this.hideDebug = c5;
+		this.enableInteractions = c6;
+		this.disableInteractions = c7;
 	}
 	registerBehaviours() {
 		super.registerBehaviours();
@@ -31450,6 +31584,7 @@ lunasurveyor_components_Menu.__super__ = haxe_ui_containers_VBox;
 Object.assign(lunasurveyor_components_Menu.prototype, {
 	__class__: lunasurveyor_components_Menu
 	,showDebug: null
+	,openConsole: null
 	,hideDebug: null
 	,enableInteractions: null
 	,disableInteractions: null
@@ -31596,46 +31731,140 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		c0.addComponent(c16);
 		let c27 = new haxe_ui_containers_Box();
 		c27.set_percentWidth(100.);
-		c27.set_percentHeight(50.);
-		c27.set_text("JS Advanced");
+		c27.set_percentHeight(100.);
+		c27.set_text("Game Switches And Variables");
 		c27.autoHeight = true;
 		let c28 = new haxe_ui_containers_VBox();
 		c28.set_percentWidth(100.);
 		c28.set_percentHeight(100.);
-		let c29 = new haxe_ui_containers_Box();
+		let c29 = new haxe_ui_containers_VBox();
 		c29.set_percentWidth(100.);
-		c29.set_percentHeight(90.);
-		let c30 = new haxe_ui_components_TextArea();
-		c30.set_id("scriptCallBox");
-		c30.set_height(150.);
+		c29.set_percentHeight(50.);
+		let c30 = new haxe_ui_components_Label();
 		c30.set_percentWidth(100.);
-		c30.set_placeholder("Enter your script calls here");
+		c30.set_text(" Game Variables");
+		c30.set_styleString("font-size:18px; color:black");
+		c30.set_textAlign("left");
 		c29.addComponent(c30);
-		c28.addComponent(c29);
-		let c31 = new haxe_ui_containers_Box();
-		c31.set_percentWidth(100.);
-		c31.set_percentHeight(10.);
-		let c32 = new haxe_ui_containers_HBox();
+		let c31 = new haxe_ui_containers_ListView();
+		c31.set_id("gameVariableList");
+		c31.set_width(200.);
+		c31.set_height(150.);
+		c31.set_selectedIndex(0);
+		c31.set_native(false);
+		c31.autoHeight = true;
+		let c32 = new haxe_ui_core_ItemRenderer();
 		c32.set_percentWidth(100.);
-		let c33 = new haxe_ui_components_Button();
-		c33.set_id("scriptCallRunBtn");
-		c33.set_percentWidth(50.);
-		c33.set_text("Run Script Call");
+		c32.set_layoutName("horizontal");
+		let c33 = new haxe_ui_containers_VBox();
+		let c34 = new haxe_ui_containers_HBox();
+		let c35 = new haxe_ui_components_Label();
+		c35.set_id("gameVariableId");
+		c35.set_percentWidth(50.);
+		c35.set_styleString("color:black;");
+		c34.addComponent(c35);
+		let c36 = new haxe_ui_components_Label();
+		c36.set_text("Value");
+		c36.set_verticalAlign("left");
+		c34.addComponent(c36);
+		let c37 = new haxe_ui_components_TextField();
+		c37.set_id("gameVariableValue");
+		c34.addComponent(c37);
+		c33.addComponent(c34);
+		let c38 = new haxe_ui_components_Button();
+		c38.set_id("updateVariable");
+		c38.set_text("Update Variable");
+		c33.addComponent(c38);
 		c32.addComponent(c33);
-		let c34 = new haxe_ui_components_Button();
-		c34.set_id("scriptCallClearBtn");
-		c34.set_percentWidth(50.);
-		c34.set_text("Clear Script Call");
-		c32.addComponent(c34);
 		c31.addComponent(c32);
-		c28.addComponent(c31);
+		c29.addComponent(c31);
+		c28.addComponent(c29);
+		let c39 = new haxe_ui_containers_VBox();
+		c39.set_percentWidth(100.);
+		c39.set_percentHeight(50.);
+		let c40 = new haxe_ui_components_Label();
+		c40.set_percentWidth(100.);
+		c40.set_text("Game Switches List");
+		c40.set_styleString("font-size:18px; color:black");
+		c40.set_textAlign("left");
+		c39.addComponent(c40);
+		let c41 = new haxe_ui_containers_ListView();
+		c41.set_id("gameSwitchesList");
+		c41.set_width(200.);
+		c41.set_height(150.);
+		c41.set_selectedIndex(0);
+		c41.set_native(false);
+		c41.autoHeight = true;
+		let c42 = new haxe_ui_core_ItemRenderer();
+		c42.set_percentWidth(100.);
+		c42.set_layoutName("horizontal");
+		let c43 = new haxe_ui_containers_VBox();
+		let c44 = new haxe_ui_containers_HBox();
+		let c45 = new haxe_ui_components_Label();
+		c45.set_id("gameSwitchId");
+		c45.set_percentWidth(50.);
+		c45.set_styleString("color:black;");
+		c44.addComponent(c45);
+		let c46 = new haxe_ui_components_Label();
+		c46.set_text("Value");
+		c46.set_verticalAlign("left");
+		c44.addComponent(c46);
+		let c47 = new haxe_ui_components_Switch();
+		c47.set_styleNames("pill-switch");
+		c44.addComponent(c47);
+		c43.addComponent(c44);
+		let c48 = new haxe_ui_components_Button();
+		c48.set_id("updateSwitch");
+		c48.set_text("Update Switch");
+		c43.addComponent(c48);
+		c42.addComponent(c43);
+		c41.addComponent(c42);
+		c39.addComponent(c41);
+		c28.addComponent(c39);
 		c27.addComponent(c28);
 		c0.addComponent(c27);
+		let c49 = new haxe_ui_containers_Box();
+		c49.set_percentWidth(100.);
+		c49.set_percentHeight(50.);
+		c49.set_text("JS Advanced");
+		c49.autoHeight = true;
+		let c50 = new haxe_ui_containers_VBox();
+		c50.set_percentWidth(100.);
+		c50.set_percentHeight(100.);
+		let c51 = new haxe_ui_containers_Box();
+		c51.set_percentWidth(100.);
+		c51.set_percentHeight(90.);
+		let c52 = new haxe_ui_components_TextArea();
+		c52.set_id("scriptCallBox");
+		c52.set_height(150.);
+		c52.set_percentWidth(100.);
+		c52.set_placeholder("Enter your script calls here");
+		c51.addComponent(c52);
+		c50.addComponent(c51);
+		let c53 = new haxe_ui_containers_Box();
+		c53.set_percentWidth(100.);
+		c53.set_percentHeight(10.);
+		let c54 = new haxe_ui_containers_HBox();
+		c54.set_percentWidth(100.);
+		let c55 = new haxe_ui_components_Button();
+		c55.set_id("scriptCallRunBtn");
+		c55.set_percentWidth(50.);
+		c55.set_text("Run Script Call");
+		c54.addComponent(c55);
+		let c56 = new haxe_ui_components_Button();
+		c56.set_id("scriptCallClearBtn");
+		c56.set_percentWidth(50.);
+		c56.set_text("Clear Script Call");
+		c54.addComponent(c56);
+		c53.addComponent(c54);
+		c50.addComponent(c53);
+		c49.addComponent(c50);
+		c0.addComponent(c49);
 		this.addComponent(c0);
 		this.bindingRoot = true;
-		this.scriptCallRunBtn = c33;
-		this.scriptCallClearBtn = c34;
-		this.scriptCallBox = c30;
+		this.scriptCallRunBtn = c55;
+		this.scriptCallClearBtn = c56;
+		this.scriptCallBox = c52;
 		this.partyMemberList = c24;
 		this.partyGroup = c19;
 		this.partyGrid = c18;
@@ -31646,6 +31875,8 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		this.mapGroup = c3;
 		this.infoGrid = c2;
 		this.gold = c21;
+		this.gameVariableList = c31;
+		this.gameSwitchesList = c41;
 		this.eventYCoordinate = c12;
 		this.eventXCoordinate = c11;
 		this.eventSpriteSheetName = c9;
@@ -31690,6 +31921,8 @@ Object.assign(lunasurveyor_components_DebugInfo.prototype, {
 	,mapGroup: null
 	,infoGrid: null
 	,gold: null
+	,gameVariableList: null
+	,gameSwitchesList: null
 	,eventYCoordinate: null
 	,eventXCoordinate: null
 	,eventSpriteSheetName: null
@@ -31861,5 +32094,6 @@ haxe_ui_util_StyleUtil.style2ComponentEReg = new EReg("-(\\w)","g");
 lunasurveyor_LunaDebug.mainView = new lunasurveyor_components_MainView();
 lunasurveyor_LunaDebug.isOpen = true;
 lunasurveyor_Luna_$Surveyor.surveyorEmitter = new PIXI.utils.EventEmitter();
+utils_Fn.JsLog = console.log;
 lunasurveyor_Luna_$Surveyor.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);

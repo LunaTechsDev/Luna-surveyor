@@ -42,17 +42,53 @@
         </vbox>
       </vbox>
     </box>
+    <box text="Game Switches And Variables" width="100%" height="100%" autoHeight="true">
+      <vbox width="100%" height="100%">
+        <vbox width="100%" height="50%">
+          <label text=" Game Variables" textAlign="left" width="100%" style="font-size:18px; color:black" />
+          <listview id="gameVariableList" width="200" height="150" autoHeight="true" selectedIndex="0">
+            <item-renderer layoutName="horizontal" width="100%">
+              <vbox>
+                <hbox>
+                  <label width="50%" id="gameVariableId" style="color:black;" />
+                  <label text="Value" verticalAlign="left" />
+                  <textfield id="gameVariableValue" />
+                </hbox>
+                <button text="Update Variable" id="updateVariable" />
+              </vbox>
+            </item-renderer>
+            <data></data>
+          </listview>
+        </vbox>
+        <vbox width="100%" height="50%">
+          <label text="Game Switches List" textAlign="left" width="100%" style="font-size:18px; color:black" />
+          <listview id="gameSwitchesList" width="200" height="150" autoHeight="true" selectedIndex="0">
+            <item-renderer layoutName="horizontal" width="100%">
+              <vbox>
+                <hbox>
+                  <label width="50%" id="gameSwitchId" style="color:black;" />
+                  <label text="Value" verticalAlign="left" />
+                  <switch styleName="pill-switch" />
+                </hbox>
+                <button text="Update Switch" id="updateSwitch" />
+              </vbox>
+            </item-renderer>
+            <data></data>
+          </listview>
+        </vbox>
+      </vbox>
+    </box>
     <box text="JS Advanced" width="100%" height="50%" autoHeight="true">
       <vbox width="100%" height="100%">
-          <box width="100%" height="90%">
-            <textarea id="scriptCallBox" width="100%" height="150" placeholder="Enter your script calls here"/>
-          </box>
-          <box width="100%" height="10%">
-            <hbox width="100%">
+        <box width="100%" height="90%">
+          <textarea id="scriptCallBox" width="100%" height="150" placeholder="Enter your script calls here" />
+        </box>
+        <box width="100%" height="10%">
+          <hbox width="100%">
             <button width="50%" id="scriptCallRunBtn" text="Run Script Call" />
             <button width="50%" id="scriptCallClearBtn" text="Clear Script Call" />
-            </hbox>
-          </box>
+          </hbox>
+        </box>
       </vbox>
     </box>
 

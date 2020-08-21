@@ -4,6 +4,7 @@ import rm.types.LunaTea.CharacterPriority;
 import rm.types.LunaTea.MoveSpeed;
 import rm.types.LunaTea.MoveFrequency;
 import haxe.ui.containers.VBox;
+import haxe.ui.events.KeyboardEvent;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
 import rm.abstracts.objects.GameActor;
@@ -22,6 +23,11 @@ import utils.Fn;
  public function setupElements() {
   this.menuContainer.addComponent(this.menu);
   this.debugInfoContainer.addComponent(this.debugInfo);
+ }
+
+ @:bind(this.menu.openConsole, MouseEvent.CLICK)
+ public function openNwJsConsole(event: MouseEvent) {
+  // Open NWJS
  }
 
  /**
@@ -106,11 +112,30 @@ import utils.Fn;
   }
  }
 
+ @:bind(this.debugInfo.scriptCallBox, KeyboardEvent.KEY_UP)
+ public function handleKeyboardEvents(event: KeyboardEvent) {
+  final backSpace = 8;
+  final upArrow = 38;
+  final leftArrow = 37;
+  final rightArrow = 39;
+  final downArrow = 40;
+
+  trace(this.debugInfo.scriptCallBox.text);
+  trace("KeyCode", event.keyCode);
+  // Handle backspace
+  switch (event.keyCode) {
+   case backSpace:
+    this.debugInfo.scriptCallBox.value;
+   case _:
+    // Do nothing
+  }
+ }
+
  @:bind(this.debugInfo.scriptCallRunBtn, MouseEvent.CLICK)
  public function runScriptCall(event: MouseEvent) {
   var code = this.debugInfo.scriptCallBox.value;
   var result = Fn.eval(code);
-  js.html.Console.log("Script Call Evaluation Result = ", result);
+  Fn.JsLog("Script Call Evaluation Result = ", result);
  }
 
  @:bind(this.debugInfo.scriptCallClearBtn, MouseEvent.CLICK)

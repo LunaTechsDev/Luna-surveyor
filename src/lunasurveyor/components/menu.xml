@@ -1,5 +1,8 @@
 <vbox width="100%">
   <menubar width="100%" style="background-color:white;">
+      <menu text="Edit">
+          <menuitem id="openConsole" text="Open Console" />
+      </menu>
       <menu text="Preferences">
           <menuitem id="showDebug" text="Show Debug" />
           <menuitem id="hideDebug" text="Hide Debug" />
