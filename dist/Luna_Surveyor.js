@@ -2,7 +2,7 @@
 // Luna_Surveyor.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-20 20:49:44
+// Build Date: 2020-08-20 21:27:11
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -15770,6 +15770,11 @@ class haxe_ui_components_TextArea extends haxe_ui_core_InteractiveComponent {
 	get_placeholder() {
 		return haxe_ui_util_Variant.toString(this.behaviours.get("placeholder"));
 	}
+	set_placeholder(value) {
+		this.behaviours.set("placeholder",haxe_ui_util_Variant.fromString(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"placeholder");
+		return value;
+	}
 	get_autoScrollToBottom() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("autoScrollToBottom"));
 	}
@@ -15806,7 +15811,7 @@ haxe_ui_components_TextArea.__interfaces__ = [haxe_ui_focus_IFocusable];
 haxe_ui_components_TextArea.__super__ = haxe_ui_core_InteractiveComponent;
 Object.assign(haxe_ui_components_TextArea.prototype, {
 	__class__: haxe_ui_components_TextArea
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_autoScrollToBottom: "get_autoScrollToBottom",get_placeholder: "get_placeholder"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_autoScrollToBottom: "get_autoScrollToBottom",set_placeholder: "set_placeholder",get_placeholder: "get_placeholder"})
 });
 class haxe_ui_components__$TextArea_TextAreaLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -31075,15 +31080,27 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		this.menuContainer = c0;
 		this.horizontalMain = c5;
 		this.debugInfoContainer = c4;
-		let c = this.menu.hideDebug;
+		let c = this.debugInfo.scriptCallClearBtn;
 		if(c != null) {
-			c.registerEvent("click",$bind(this,this.hideDebugTools));
+			c.registerEvent("click",$bind(this,this.clearScriptCallText));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallClearBtn" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c6 = this.debugInfo.scriptCallRunBtn;
+		if(c6 != null) {
+			c6.registerEvent("click",$bind(this,this.runScriptCall));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallRunBtn" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c7 = this.menu.hideDebug;
+		if(c7 != null) {
+			c7.registerEvent("click",$bind(this,this.hideDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.hideDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c6 = this.menu.showDebug;
-		if(c6 != null) {
-			c6.registerEvent("click",$bind(this,this.showDebugTools));
+		let c8 = this.menu.showDebug;
+		if(c8 != null) {
+			c8.registerEvent("click",$bind(this,this.showDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.showDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
@@ -31209,6 +31226,13 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 			let member = members[_g++];
 			this.debugInfo.partyMemberList.get_dataSource().add({ actorName : member.name()});
 		}
+	}
+	runScriptCall(event) {
+		let code = this.debugInfo.scriptCallBox.get_value();
+		console.log("Script Call Evaluation Result = ",eval(code));
+	}
+	clearScriptCallText(event) {
+		this.debugInfo.scriptCallBox.set_value("");
 	}
 	registerBehaviours() {
 		super.registerBehaviours();
@@ -31434,7 +31458,7 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 	constructor() {
 		super();
 		let c0 = new haxe_ui_containers_TabView();
-		c0.set_width(250.);
+		c0.set_width(300.);
 		c0.set_height(400.);
 		c0.autoHeight = true;
 		let c1 = new haxe_ui_containers_Box();
@@ -31570,8 +31594,48 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		c17.addComponent(c22);
 		c16.addComponent(c17);
 		c0.addComponent(c16);
+		let c27 = new haxe_ui_containers_Box();
+		c27.set_percentWidth(100.);
+		c27.set_percentHeight(50.);
+		c27.set_text("JS Advanced");
+		c27.autoHeight = true;
+		let c28 = new haxe_ui_containers_VBox();
+		c28.set_percentWidth(100.);
+		c28.set_percentHeight(100.);
+		let c29 = new haxe_ui_containers_Box();
+		c29.set_percentWidth(100.);
+		c29.set_percentHeight(90.);
+		let c30 = new haxe_ui_components_TextArea();
+		c30.set_id("scriptCallBox");
+		c30.set_height(150.);
+		c30.set_percentWidth(100.);
+		c30.set_placeholder("Enter your script calls here");
+		c29.addComponent(c30);
+		c28.addComponent(c29);
+		let c31 = new haxe_ui_containers_Box();
+		c31.set_percentWidth(100.);
+		c31.set_percentHeight(10.);
+		let c32 = new haxe_ui_containers_HBox();
+		c32.set_percentWidth(100.);
+		let c33 = new haxe_ui_components_Button();
+		c33.set_id("scriptCallRunBtn");
+		c33.set_percentWidth(50.);
+		c33.set_text("Run Script Call");
+		c32.addComponent(c33);
+		let c34 = new haxe_ui_components_Button();
+		c34.set_id("scriptCallClearBtn");
+		c34.set_percentWidth(50.);
+		c34.set_text("Clear Script Call");
+		c32.addComponent(c34);
+		c31.addComponent(c32);
+		c28.addComponent(c31);
+		c27.addComponent(c28);
+		c0.addComponent(c27);
 		this.addComponent(c0);
 		this.bindingRoot = true;
+		this.scriptCallRunBtn = c33;
+		this.scriptCallClearBtn = c34;
+		this.scriptCallBox = c30;
 		this.partyMemberList = c24;
 		this.partyGroup = c19;
 		this.partyGrid = c18;
@@ -31613,6 +31677,9 @@ lunasurveyor_components_DebugInfo.__name__ = "lunasurveyor.components.DebugInfo"
 lunasurveyor_components_DebugInfo.__super__ = haxe_ui_containers_VBox;
 Object.assign(lunasurveyor_components_DebugInfo.prototype, {
 	__class__: lunasurveyor_components_DebugInfo
+	,scriptCallRunBtn: null
+	,scriptCallClearBtn: null
+	,scriptCallBox: null
 	,partyMemberList: null
 	,partyGroup: null
 	,partyGrid: null

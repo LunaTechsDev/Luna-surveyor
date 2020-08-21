@@ -7,6 +7,7 @@ import haxe.ui.containers.VBox;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
 import rm.abstracts.objects.GameActor;
+import utils.Fn;
 
 @:build(haxe.ui.macros.ComponentMacros.build("src/lunasurveyor/components/main.xml")) class MainView extends VBox {
  public var menu: Menu = new Menu();
@@ -103,6 +104,18 @@ import rm.abstracts.objects.GameActor;
     actorName: member.name()
    });
   }
+ }
+
+ @:bind(this.debugInfo.scriptCallRunBtn, MouseEvent.CLICK)
+ public function runScriptCall(event: MouseEvent) {
+  var code = this.debugInfo.scriptCallBox.value;
+  var result = Fn.eval(code);
+  js.html.Console.log("Script Call Evaluation Result = ", result);
+ }
+
+ @:bind(this.debugInfo.scriptCallClearBtn, MouseEvent.CLICK)
+ public function clearScriptCallText(event: MouseEvent) {
+  this.debugInfo.scriptCallBox.value = "";
  }
 }
 
