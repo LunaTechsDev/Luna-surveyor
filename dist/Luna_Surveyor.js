@@ -2,7 +2,7 @@
 // Luna_Surveyor.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-21 20:32:37
+// Build Date: 2020-08-21 21:00:41
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -31209,6 +31209,7 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		this.debugInfoContainer.addComponent(this.debugInfo);
 	}
 	openNwJsConsole(event) {
+		rm.core.Utils.isNwjs();
 	}
 	showDebugTools(event) {
 		this.debugInfoContainer.show();
@@ -31345,7 +31346,7 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		let _g1 = this.debugInfo.gameVariableList.get_dataSource().get_size();
 		while(_g < _g1) {
 			let index = _g++;
-			haxe_Log.trace("Update Variable",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 137, className : "lunasurveyor.components.MainView", methodName : "updateVariables"});
+			haxe_Log.trace("Update Variable",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 146, className : "lunasurveyor.components.MainView", methodName : "updateVariables"});
 			let item = this.debugInfo.gameVariableList.get_dataSource().get(index);
 			$gameVariables.setValue(index + 1,item.gameVariableValue);
 		}
@@ -31901,7 +31902,7 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 	updateGameSwitchList() {
 		let dataSystem = $dataSystem;
 		if(dataSystem != null) {
-			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 206, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
+			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 215, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
 			let _g = 1;
 			let _g1 = dataSystem.switches.length;
 			while(_g < _g1) {

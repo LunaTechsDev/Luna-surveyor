@@ -1,5 +1,7 @@
 package lunasurveyor.components;
 
+import rm.managers.SceneManager;
+import rm.core.Utils;
 import rm.abstracts.objects.GameSwitches;
 import rm.Globals;
 import rm.types.LunaTea.CharacterPriority;
@@ -30,6 +32,13 @@ import utils.Fn;
  @:bind(this.menu.openConsole, MouseEvent.CLICK)
  public function openNwJsConsole(event: MouseEvent) {
   // Open NWJS
+  if (Utils.isNwjs()) {
+   #if !compileMV
+   SceneManager.showDevTools();
+   #else
+   // add require statement code here for opening dev tools
+   #end
+  }
  }
 
  /**
