@@ -19,5 +19,4 @@
 
 # Place the plugins you want evaluated in this list
 --next
--js dist/TestPlugin.js
--main TestPlugin
+-js dummy.js

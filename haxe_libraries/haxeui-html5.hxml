@@ -1,6 +1,6 @@
-# @install: lix --silent download "haxelib:/haxeui-html5#1.1.1" into haxeui-html5/1.1.1/haxelib
+# @install: lix --silent download "gh://github.com/haxeui/haxeui-html5#28a9a3d0b523b4bf064fb670f412034b6003fc01" into haxeui-html5/1.1.1/github/28a9a3d0b523b4bf064fb670f412034b6003fc01
 -lib haxeui-core
--cp ${HAXE_LIBCACHE}/haxeui-html5/1.1.1/haxelib/
+-cp ${HAXE_LIBCACHE}/haxeui-html5/1.1.1/github/28a9a3d0b523b4bf064fb670f412034b6003fc01/
 -D haxeui-html5=1.1.1
 --macro include("haxe.ui.backend.html5.native")
 --macro include("haxe.ui.backend.html5.native.behaviours")

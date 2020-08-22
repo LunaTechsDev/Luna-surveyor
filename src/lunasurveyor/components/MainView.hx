@@ -1,5 +1,7 @@
 package lunasurveyor.components;
 
+import rm.abstracts.objects.GameSwitches;
+import rm.Globals;
 import rm.types.LunaTea.CharacterPriority;
 import rm.types.LunaTea.MoveSpeed;
 import rm.types.LunaTea.MoveFrequency;
@@ -112,6 +114,27 @@ import utils.Fn;
   }
  }
 
+ @:bind(this.debugInfo.gameVariableList, MouseEvent.CLICK)
+ public function updateGameVariable(event: MouseEvent) {
+  this.debugInfo.updateGameVariableList();
+  trace("Game Variable Value Updated", event.target.id);
+  this.debugInfo.gameVariableList.updateComponentDisplay();
+  this.debugInfo.updateGameVariableList();
+ }
+
+ @:bind(this.debugInfo.gameSwitchesList, MouseEvent.CLICK)
+ public function updateGameSwitchValue(event: MouseEvent) {
+  var list = this.debugInfo.gameSwitchesList;
+  var index = this.debugInfo.gameSwitchesList.selectedIndex;
+  if (list.selectedItem != null) {
+   list.selectedItem.gameSwitchValue = !list.selectedItem.gameSwitchValue;
+   Globals.GameSwitches.setValue(index + 1, list.selectedItem.gameSwitchValue);
+   this.debugInfo.gameSwitchesList.dataSource.update(index, list.selectedItem);
+  }
+
+  this.debugInfo.updateGameSwitchList();
+ }
+
  @:bind(this.debugInfo.scriptCallBox, KeyboardEvent.KEY_UP)
  public function handleKeyboardEvents(event: KeyboardEvent) {
   final backSpace = 8;
@@ -155,5 +178,36 @@ class Menu extends VBox {
 class DebugInfo extends VBox {
  public function new() {
   super();
+  this.updateGameVariableList();
+  this.updateGameSwitchList();
+ }
+
+ public function updateGameVariableList() {
+  var dataSystem = Globals.DataSystem;
+  if (dataSystem != null) {
+   for (index in 1...dataSystem.variables.length) {
+    if (this.gameVariableList.dataSource.get(index) == null) {
+     this.gameVariableList.dataSource.add({
+      gameVariableName: '${index}: ${dataSystem.variables[index]}',
+      gameVariableValue: Globals.GameVariables.value(index)
+     });
+    }
+   }
+  }
+ }
+
+ public function updateGameSwitchList() {
+  var dataSystem = Globals.DataSystem;
+  if (dataSystem != null) {
+   trace("Update List");
+   for (index in 1...dataSystem.switches.length) {
+    if (this.gameSwitchesList.dataSource.get(index) == null) {
+     this.gameSwitchesList.dataSource.add({
+      gameSwitchName: '${index}: ${dataSystem.switches[index]}',
+      gameSwitchValue: Globals.GameSwitches.value(index)
+     });
+    }
+   }
+  }
  }
 }
