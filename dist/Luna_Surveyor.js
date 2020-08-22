@@ -2,7 +2,7 @@
 // Luna_Surveyor.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-21 20:03:32
+// Build Date: 2020-08-21 20:32:37
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -31166,11 +31166,11 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallRunBtn" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c7 = this.debugInfo.scriptCallBox;
+		let c7 = this.debugInfo.updateVariables;
 		if(c7 != null) {
-			c7.registerEvent("keyup",$bind(this,this.handleKeyboardEvents));
+			c7.registerEvent("click",$bind(this,this.updateVariables));
 		} else {
-			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallBox" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.updateVariables" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
 		let c8 = this.debugInfo.gameSwitchesList;
 		if(c8 != null) {
@@ -31329,9 +31329,6 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 	}
 	updateGameVariable(event) {
 		this.debugInfo.updateGameVariableList();
-		haxe_Log.trace("Game Variable Value Updated",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 120, className : "lunasurveyor.components.MainView", methodName : "updateGameVariable", customParams : [event.target.get_id()]});
-		this.debugInfo.gameVariableList.updateComponentDisplay();
-		this.debugInfo.updateGameVariableList();
 	}
 	updateGameSwitchValue(event) {
 		let list = this.debugInfo.gameSwitchesList;
@@ -31343,10 +31340,15 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		}
 		this.debugInfo.updateGameSwitchList();
 	}
-	handleKeyboardEvents(event) {
-		haxe_Log.trace(this.debugInfo.scriptCallBox.get_text(),{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 146, className : "lunasurveyor.components.MainView", methodName : "handleKeyboardEvents"});
-		haxe_Log.trace("KeyCode",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 147, className : "lunasurveyor.components.MainView", methodName : "handleKeyboardEvents", customParams : [event.keyCode]});
-		this.debugInfo.scriptCallBox.get_value();
+	updateVariables(event) {
+		let _g = 0;
+		let _g1 = this.debugInfo.gameVariableList.get_dataSource().get_size();
+		while(_g < _g1) {
+			let index = _g++;
+			haxe_Log.trace("Update Variable",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 137, className : "lunasurveyor.components.MainView", methodName : "updateVariables"});
+			let item = this.debugInfo.gameVariableList.get_dataSource().get(index);
+			$gameVariables.setValue(index + 1,item.gameVariableValue);
+		}
 	}
 	runScriptCall(event) {
 		let code = this.debugInfo.scriptCallBox.get_value();
@@ -31400,7 +31402,6 @@ class lunasurveyor_LunaDebug {
 			if($gameMap.mapId() > 0) {
 				let mapX = $gameMap.canvasToMapX(event.clientX);
 				let mapY = $gameMap.canvasToMapY(event.clientY);
-				haxe_Log.trace(mapX,{ fileName : "src/lunasurveyor/LunaDebug.hx", lineNumber : 42, className : "lunasurveyor.LunaDebug", methodName : "setupMouseEvents", customParams : [mapY,"Clicked Information"]});
 				let gameEvent = $gameMap.eventsXy(mapX,mapY).shift();
 				if(gameEvent != null) {
 					lunasurveyor_LunaDebug.setEventInformation(gameEvent);
@@ -31453,6 +31454,7 @@ class lunasurveyor_Luna_$Surveyor {
 		Scene_Base = lunasurveyor_SurveyorSceneBaseExt;
 		Scene_Map = lunasurveyor_SurveyorSceneMapExt;
 		Game_Player = lunasurveyor_SurveyorGamePlayerExt;
+		Input = lunasurveyor_SurveyorInputExt;
 	}
 	static setupDebugTool() {
 		haxe_Timer.delay(function() {
@@ -31510,6 +31512,21 @@ lunasurveyor_SurveyorGamePlayerExt.__name__ = "lunasurveyor.SurveyorGamePlayerEx
 lunasurveyor_SurveyorGamePlayerExt.__super__ = Game_Player;
 Object.assign(lunasurveyor_SurveyorGamePlayerExt.prototype, {
 	__class__: lunasurveyor_SurveyorGamePlayerExt
+});
+class lunasurveyor_SurveyorInputExt extends Input {
+	static _shouldPreventDefault(keyCode) {
+		if(lunasurveyor_LunaDebug.isOpen) {
+			return false;
+		} else {
+			return Input._shouldPreventDefault(keyCode);
+		}
+	}
+}
+$hxClasses["lunasurveyor.SurveyorInputExt"] = lunasurveyor_SurveyorInputExt;
+lunasurveyor_SurveyorInputExt.__name__ = "lunasurveyor.SurveyorInputExt";
+lunasurveyor_SurveyorInputExt.__super__ = Input;
+Object.assign(lunasurveyor_SurveyorInputExt.prototype, {
+	__class__: lunasurveyor_SurveyorInputExt
 });
 class lunasurveyor_components_Menu extends haxe_ui_containers_VBox {
 	constructor() {
@@ -31761,12 +31778,12 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		c34.set_id("gameVariableValue");
 		c34.set_percentWidth(50.);
 		c32.addComponent(c34);
-		let c35 = new haxe_ui_components_Button();
-		c35.set_id("updateVariable");
-		c35.set_text("Update");
-		c32.addComponent(c35);
 		c31.addComponent(c32);
 		c29.addComponent(c31);
+		let c35 = new haxe_ui_components_Button();
+		c35.set_id("updateVariables");
+		c35.set_text("Update Game Variables");
+		c29.addComponent(c35);
 		c28.addComponent(c29);
 		let c36 = new haxe_ui_containers_VBox();
 		c36.set_percentWidth(100.);
@@ -31840,6 +31857,7 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		c0.addComponent(c42);
 		this.addComponent(c0);
 		this.bindingRoot = true;
+		this.updateVariables = c35;
 		this.scriptCallRunBtn = c48;
 		this.scriptCallClearBtn = c49;
 		this.scriptCallBox = c45;
@@ -31883,7 +31901,7 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 	updateGameSwitchList() {
 		let dataSystem = $dataSystem;
 		if(dataSystem != null) {
-			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 202, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
+			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 206, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
 			let _g = 1;
 			let _g1 = dataSystem.switches.length;
 			while(_g < _g1) {
@@ -31915,6 +31933,7 @@ lunasurveyor_components_DebugInfo.__name__ = "lunasurveyor.components.DebugInfo"
 lunasurveyor_components_DebugInfo.__super__ = haxe_ui_containers_VBox;
 Object.assign(lunasurveyor_components_DebugInfo.prototype, {
 	__class__: lunasurveyor_components_DebugInfo
+	,updateVariables: null
 	,scriptCallRunBtn: null
 	,scriptCallClearBtn: null
 	,scriptCallBox: null

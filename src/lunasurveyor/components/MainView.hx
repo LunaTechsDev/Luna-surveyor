@@ -117,9 +117,6 @@ import utils.Fn;
  @:bind(this.debugInfo.gameVariableList, MouseEvent.CLICK)
  public function updateGameVariable(event: MouseEvent) {
   this.debugInfo.updateGameVariableList();
-  trace("Game Variable Value Updated", event.target.id);
-  this.debugInfo.gameVariableList.updateComponentDisplay();
-  this.debugInfo.updateGameVariableList();
  }
 
  @:bind(this.debugInfo.gameSwitchesList, MouseEvent.CLICK)
@@ -131,28 +128,35 @@ import utils.Fn;
    Globals.GameSwitches.setValue(index + 1, list.selectedItem.gameSwitchValue);
    this.debugInfo.gameSwitchesList.dataSource.update(index, list.selectedItem);
   }
-
   this.debugInfo.updateGameSwitchList();
  }
 
- @:bind(this.debugInfo.scriptCallBox, KeyboardEvent.KEY_UP)
- public function handleKeyboardEvents(event: KeyboardEvent) {
-  final backSpace = 8;
-  final upArrow = 38;
-  final leftArrow = 37;
-  final rightArrow = 39;
-  final downArrow = 40;
-
-  trace(this.debugInfo.scriptCallBox.text);
-  trace("KeyCode", event.keyCode);
-  // Handle backspace
-  switch (event.keyCode) {
-   case backSpace:
-    this.debugInfo.scriptCallBox.value;
-   case _:
-    // Do nothing
+ @:bind(this.debugInfo.updateVariables, MouseEvent.CLICK)
+ public function updateVariables(event: MouseEvent) {
+  for (index in 0...this.debugInfo.gameVariableList.dataSource.size) {
+   trace("Update Variable");
+   var item = this.debugInfo.gameVariableList.dataSource.get(index);
+   Globals.GameVariables.setValue(index + 1, item.gameVariableValue);
   }
  }
+
+ //  @:bind(this.debugInfo.scriptCallBox, KeyboardEvent.KEY_UP)
+ //  public function handleKeyboardEvents(event: KeyboardEvent) {
+ //   final backSpace = 8;
+ //   final upArrow = 38;
+ //   final leftArrow = 37;
+ //   final rightArrow = 39;
+ //   final downArrow = 40;
+ //   trace(this.debugInfo.scriptCallBox.text);
+ //   trace("KeyCode", event.keyCode);
+ //   // Handle backspace
+ //   switch (event.keyCode) {
+ //    case backSpace:
+ //     this.debugInfo.scriptCallBox.value;
+ //    case _:
+ //     // Do nothing
+ //   }
+ //  }
 
  @:bind(this.debugInfo.scriptCallRunBtn, MouseEvent.CLICK)
  public function runScriptCall(event: MouseEvent) {

@@ -39,7 +39,6 @@ class LunaDebug {
     if (Globals.GameMap.mapId() > 0) {
      var mapX = Globals.GameMap.canvasToMapX(event.clientX);
      var mapY = Globals.GameMap.canvasToMapY(event.clientY);
-     trace(mapX, mapY, "Clicked Information");
      var gameEvent = Globals.GameMap.eventsXy(mapX, mapY).shift();
      if (gameEvent != null) {
       setEventInformation(gameEvent);

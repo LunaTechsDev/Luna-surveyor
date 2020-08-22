@@ -1,5 +1,6 @@
 package lunasurveyor;
 
+import rm.core.Input;
 import rm.Globals;
 import rm.scenes.Scene_Map;
 import rm.objects.Game_Player;
@@ -30,6 +31,7 @@ class Luna_Surveyor {
   var SurveyorSceneBase = Fn.renameClass(Scene_Base, SurveyorSceneBaseExt);
   var SurveyorSceneMap = Fn.renameClass(Scene_Map, SurveyorSceneMapExt);
   var SurveyorGamePlayer = Fn.renameClass(Game_Player, SurveyorGamePlayerExt);
+  var SurveyorInput = Fn.renameClass(Input, SurveyorInputExt);
  }
 
  public static function setupDebugTool() {
@@ -77,6 +79,17 @@ class SurveyorGamePlayerExt extends Game_Player {
    return false;
   } else {
    return result;
+  }
+ }
+}
+
+@:keep
+class SurveyorInputExt extends Input {
+ private static function _shouldPreventDefault(keyCode: Int) {
+  if (LunaDebug.isOpen) {
+   return false;
+  } else {
+   return Input._shouldPreventDefault(keyCode);
   }
  }
 }
