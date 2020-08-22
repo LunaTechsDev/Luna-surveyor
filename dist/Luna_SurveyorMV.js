@@ -2,7 +2,7 @@
 // Luna_SurveyorMV.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-08-21 21:17:26
+// Build Date: 2020-08-22 10:11:27
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -15811,6 +15811,11 @@ class haxe_ui_components_TextArea extends haxe_ui_core_InteractiveComponent {
 		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"placeholder");
 		return value;
 	}
+	set_wrap(value) {
+		this.behaviours.set("wrap",haxe_ui_util_Variant.fromBool(value));
+		haxe_ui_binding_BindingManager.get_instance().componentPropChanged(this,"wrap");
+		return value;
+	}
 	get_autoScrollToBottom() {
 		return haxe_ui_util_Variant.toBool(this.behaviours.get("autoScrollToBottom"));
 	}
@@ -15847,7 +15852,7 @@ haxe_ui_components_TextArea.__interfaces__ = [haxe_ui_focus_IFocusable];
 haxe_ui_components_TextArea.__super__ = haxe_ui_core_InteractiveComponent;
 Object.assign(haxe_ui_components_TextArea.prototype, {
 	__class__: haxe_ui_components_TextArea
-	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_autoScrollToBottom: "get_autoScrollToBottom",set_placeholder: "set_placeholder",get_placeholder: "get_placeholder"})
+	,__properties__: Object.assign({}, haxe_ui_core_InteractiveComponent.prototype.__properties__, {get_autoScrollToBottom: "get_autoScrollToBottom",set_wrap: "set_wrap",set_placeholder: "set_placeholder",get_placeholder: "get_placeholder"})
 });
 class haxe_ui_components__$TextArea_TextAreaLayout extends haxe_ui_layouts_DefaultLayout {
 	constructor() {
@@ -31150,33 +31155,57 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.updateVariables" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c8 = this.debugInfo.gameSwitchesList;
+		let c8 = this.debugInfo.gameArmorList;
 		if(c8 != null) {
-			c8.registerEvent("click",$bind(this,this.updateGameSwitchValue));
+			c8.registerEvent("click",$bind(this,this.updateGameArmor));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.gameArmorList" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c9 = this.debugInfo.gameWeaponList;
+		if(c9 != null) {
+			c9.registerEvent("click",$bind(this,this.updateGameWeapons));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.gameWeaponList" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c10 = this.debugInfo.gameItemList;
+		if(c10 != null) {
+			c10.registerEvent("click",$bind(this,this.updateGameItemList));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.gameItemList" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c11 = this.debugInfo.gameSwitchesList;
+		if(c11 != null) {
+			c11.registerEvent("click",$bind(this,this.updateGameSwitchValue));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.gameSwitchesList" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c9 = this.debugInfo.gameVariableList;
-		if(c9 != null) {
-			c9.registerEvent("click",$bind(this,this.updateGameVariable));
+		let c12 = this.debugInfo.gameVariableList;
+		if(c12 != null) {
+			c12.registerEvent("click",$bind(this,this.updateGameVariable));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.gameVariableList" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c10 = this.menu.hideDebug;
-		if(c10 != null) {
-			c10.registerEvent("click",$bind(this,this.hideDebugTools));
+		let c13 = this.debugInfo.scriptCallBox;
+		if(c13 != null) {
+			c13.registerEvent("click",$bind(this,this.setupTextArea));
+		} else {
+			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.debugInfo.scriptCallBox" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
+		}
+		let c14 = this.menu.hideDebug;
+		if(c14 != null) {
+			c14.registerEvent("click",$bind(this,this.hideDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.hideDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c11 = this.menu.showDebug;
-		if(c11 != null) {
-			c11.registerEvent("click",$bind(this,this.showDebugTools));
+		let c15 = this.menu.showDebug;
+		if(c15 != null) {
+			c15.registerEvent("click",$bind(this,this.showDebugTools));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.showDebug" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
-		let c12 = this.menu.openConsole;
-		if(c12 != null) {
-			c12.registerEvent("click",$bind(this,this.openNwJsConsole));
+		let c16 = this.menu.openConsole;
+		if(c16 != null) {
+			c16.registerEvent("click",$bind(this,this.openNwJsConsole));
 		} else {
 			haxe_Log.trace("WARNING: could not find component to regsiter event (" + "this.menu.openConsole" + ")",{ fileName : "haxe/ui/macros/Macros.hx", lineNumber : 259, className : "lunasurveyor.components.MainView", methodName : "new"});
 		}
@@ -31306,6 +31335,12 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 			this.debugInfo.partyMemberList.get_dataSource().add({ actorName : member.name()});
 		}
 	}
+	setupTextArea(event) {
+		let textArea = window.document.getElementById("scriptCallBox").firstChild;
+		if(textArea.style.cssText.indexOf("width") == -1) {
+			textArea.style.cssText += "width:inherit;";
+		}
+	}
 	updateGameVariable(event) {
 		this.debugInfo.updateGameVariableList();
 	}
@@ -31319,12 +31354,21 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		}
 		this.debugInfo.updateGameSwitchList();
 	}
+	updateGameItemList(event) {
+		this.debugInfo.updateGameItemList();
+	}
+	updateGameWeapons(event) {
+		this.debugInfo.updateGameWeaponList();
+	}
+	updateGameArmor(event) {
+		this.debugInfo.updateGameArmorList();
+	}
 	updateVariables(event) {
 		let _g = 0;
 		let _g1 = this.debugInfo.gameVariableList.get_dataSource().get_size();
 		while(_g < _g1) {
 			let index = _g++;
-			haxe_Log.trace("Update Variable",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 146, className : "lunasurveyor.components.MainView", methodName : "updateVariables"});
+			haxe_Log.trace("Update Variable",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 177, className : "lunasurveyor.components.MainView", methodName : "updateVariables"});
 			let item = this.debugInfo.gameVariableList.get_dataSource().get(index);
 			$gameVariables.setValue(index + 1,item.gameVariableValue);
 		}
@@ -31333,6 +31377,8 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		let code = this.debugInfo.scriptCallBox.get_value();
 		let result = eval(code);
 		utils_Fn.JsLog("Script Call Evaluation Result = ",result);
+		let _g = this.debugInfo.scriptCallBox;
+		_g.set_styleString(_g.get_styleString() + "width:inherit;");
 	}
 	clearScriptCallText(event) {
 		this.debugInfo.scriptCallBox.set_value("");
@@ -31372,11 +31418,11 @@ class lunasurveyor_LunaDebug {
 		window.document.head.appendChild(element);
 		let gameCanvas = window.document.getElementById("ErrorPrinter");
 		window.document.body.insertBefore(lunasurveyor_LunaDebug.mainView.element,gameCanvas);
-		haxe_Log.trace("Added Debug to the current scene.",{ fileName : "src/lunasurveyor/LunaDebug.hx", lineNumber : 30, className : "lunasurveyor.LunaDebug", methodName : "initializeDebug"});
+		haxe_Log.trace("Added Debug to the current scene.",{ fileName : "src/lunasurveyor/LunaDebug.hx", lineNumber : 31, className : "lunasurveyor.LunaDebug", methodName : "initializeDebug"});
 		lunasurveyor_LunaDebug.setupMouseEvents();
 	}
 	static setupMouseEvents() {
-		haxe_Log.trace("Setup Mouse Event",{ fileName : "src/lunasurveyor/LunaDebug.hx", lineNumber : 36, className : "lunasurveyor.LunaDebug", methodName : "setupMouseEvents"});
+		haxe_Log.trace("Setup Mouse Event",{ fileName : "src/lunasurveyor/LunaDebug.hx", lineNumber : 37, className : "lunasurveyor.LunaDebug", methodName : "setupMouseEvents"});
 		window.document.addEventListener("mousedown",function(event) {
 			if($gameMap.mapId() > 0) {
 				let mapX = $gameMap.canvasToMapX(event.clientX);
@@ -31585,7 +31631,7 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 	constructor() {
 		super();
 		let c0 = new haxe_ui_containers_TabView();
-		c0.set_width(300.);
+		c0.set_width(560.);
 		c0.set_height(400.);
 		c0.autoHeight = true;
 		let c1 = new haxe_ui_containers_Box();
@@ -31724,122 +31770,238 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		let c27 = new haxe_ui_containers_Box();
 		c27.set_percentWidth(100.);
 		c27.set_percentHeight(100.);
-		c27.set_text("Game Switches And Variables");
-		c27.autoHeight = true;
-		let c28 = new haxe_ui_containers_VBox();
+		c27.set_text("Game Items");
+		let c28 = new haxe_ui_containers_HBox();
+		c28.set_id("itemListBox");
 		c28.set_percentWidth(100.);
 		c28.set_percentHeight(100.);
-		let c29 = new haxe_ui_containers_VBox();
-		c29.set_percentWidth(100.);
-		c29.set_percentHeight(50.);
-		let c30 = new haxe_ui_components_Label();
+		let c29 = new haxe_ui_containers_Box();
+		c29.set_percentWidth(33.);
+		c29.set_percentHeight(100.);
+		let c30 = new haxe_ui_containers_VBox();
 		c30.set_percentWidth(100.);
-		c30.set_text(" Game Variables");
-		c30.set_styleString("font-size:18px; color:black");
-		c30.set_textAlign("left");
-		c29.addComponent(c30);
-		let c31 = new haxe_ui_containers_ListView();
-		c31.set_id("gameVariableList");
+		c30.set_percentHeight(100.);
+		let c31 = new haxe_ui_components_Label();
 		c31.set_percentWidth(100.);
-		c31.set_percentHeight(100.);
-		c31.set_selectedIndex(0);
-		c31.set_native(false);
-		c31.autoHeight = true;
-		let c32 = new haxe_ui_core_ItemRenderer();
+		c31.set_text("Game Items");
+		c31.set_styleString("font-size:18px; color:black");
+		c31.set_textAlign("center");
+		c30.addComponent(c31);
+		let c32 = new haxe_ui_containers_ListView();
+		c32.set_id("gameItemList");
 		c32.set_percentWidth(100.);
-		c32.set_layoutName("horizontal");
-		let c33 = new haxe_ui_components_Label();
-		c33.set_id("gameVariableName");
-		c33.set_percentWidth(50.);
-		c33.set_styleString("color:black;");
-		c32.addComponent(c33);
-		let c34 = new haxe_ui_components_TextField();
-		c34.set_id("gameVariableValue");
+		c32.set_percentHeight(100.);
+		c32.set_selectedIndex(0);
+		c32.set_native(false);
+		c32.autoHeight = true;
+		let c33 = new haxe_ui_core_ItemRenderer();
+		c33.set_percentWidth(100.);
+		c33.set_layoutName("horizontal");
+		let c34 = new haxe_ui_components_Label();
+		c34.set_id("gameName");
 		c34.set_percentWidth(50.);
-		c32.addComponent(c34);
-		c31.addComponent(c32);
-		c29.addComponent(c31);
-		let c35 = new haxe_ui_components_Button();
-		c35.set_id("updateVariables");
-		c35.set_text("Update Game Variables");
-		c29.addComponent(c35);
+		c34.set_styleString("color:black;");
+		c33.addComponent(c34);
+		let c35 = new haxe_ui_components_TextField();
+		c35.set_id("itemAmount");
+		c35.set_percentWidth(50.);
+		c33.addComponent(c35);
+		c32.addComponent(c33);
+		c30.addComponent(c32);
+		c29.addComponent(c30);
 		c28.addComponent(c29);
-		let c36 = new haxe_ui_containers_VBox();
-		c36.set_percentWidth(100.);
-		c36.set_percentHeight(50.);
-		let c37 = new haxe_ui_components_Label();
+		let c36 = new haxe_ui_containers_Box();
+		c36.set_percentWidth(34.);
+		c36.set_percentHeight(100.);
+		let c37 = new haxe_ui_containers_VBox();
 		c37.set_percentWidth(100.);
-		c37.set_text("Game Switches List");
-		c37.set_styleString("font-size:18px; color:black");
-		c37.set_textAlign("left");
-		c36.addComponent(c37);
-		let c38 = new haxe_ui_containers_ListView();
-		c38.set_id("gameSwitchesList");
+		c37.set_percentHeight(100.);
+		let c38 = new haxe_ui_components_Label();
 		c38.set_percentWidth(100.);
-		c38.set_percentHeight(100.);
-		c38.set_selectedIndex(0);
-		c38.set_native(false);
-		c38.autoHeight = true;
-		let c39 = new haxe_ui_core_ItemRenderer();
+		c38.set_text("Game Weapons");
+		c38.set_styleString("font-size:18px; color:black");
+		c38.set_textAlign("center");
+		c37.addComponent(c38);
+		let c39 = new haxe_ui_containers_ListView();
+		c39.set_id("gameWeaponList");
 		c39.set_percentWidth(100.);
-		c39.set_layoutName("horizontal");
-		let c40 = new haxe_ui_components_Label();
-		c40.set_id("gameSwitchName");
+		c39.set_percentHeight(100.);
+		c39.set_selectedIndex(0);
+		c39.set_native(false);
+		c39.autoHeight = true;
+		let c40 = new haxe_ui_core_ItemRenderer();
 		c40.set_percentWidth(100.);
-		c40.set_styleString("color:black;");
-		c40.set_verticalAlign("left");
+		c40.set_layoutName("horizontal");
+		let c41 = new haxe_ui_components_Label();
+		c41.set_id("gameName");
+		c41.set_percentWidth(50.);
+		c41.set_styleString("color:black;");
+		c40.addComponent(c41);
+		let c42 = new haxe_ui_components_TextField();
+		c42.set_id("itemAmount");
+		c42.set_percentWidth(50.);
+		c40.addComponent(c42);
 		c39.addComponent(c40);
-		let c41 = new haxe_ui_components_CheckBox();
-		c41.set_id("gameSwitchValue");
-		c39.addComponent(c41);
-		c38.addComponent(c39);
-		c36.addComponent(c38);
+		c37.addComponent(c39);
+		c36.addComponent(c37);
 		c28.addComponent(c36);
-		c27.addComponent(c28);
-		c0.addComponent(c27);
-		let c42 = new haxe_ui_containers_Box();
-		c42.set_percentWidth(100.);
-		c42.set_percentHeight(100.);
-		c42.set_text("JS Advanced");
-		c42.autoHeight = true;
-		let c43 = new haxe_ui_containers_VBox();
-		c43.set_percentWidth(100.);
+		let c43 = new haxe_ui_containers_Box();
+		c43.set_percentWidth(33.);
 		c43.set_percentHeight(100.);
-		let c44 = new haxe_ui_containers_Box();
+		let c44 = new haxe_ui_containers_VBox();
 		c44.set_percentWidth(100.);
-		c44.set_percentHeight(90.);
-		let c45 = new haxe_ui_components_TextArea();
-		c45.set_id("scriptCallBox");
+		c44.set_percentHeight(100.);
+		let c45 = new haxe_ui_components_Label();
 		c45.set_percentWidth(100.);
-		c45.set_percentHeight(75.);
-		c45.set_placeholder("Enter your script calls here");
+		c45.set_text("Game Armor");
+		c45.set_styleString("font-size:18px; color:black");
+		c45.set_textAlign("center");
 		c44.addComponent(c45);
-		c43.addComponent(c44);
-		let c46 = new haxe_ui_containers_Box();
+		let c46 = new haxe_ui_containers_ListView();
+		c46.set_id("gameArmorList");
 		c46.set_percentWidth(100.);
-		c46.set_percentHeight(10.);
-		let c47 = new haxe_ui_containers_HBox();
+		c46.set_percentHeight(100.);
+		c46.set_selectedIndex(0);
+		c46.set_native(false);
+		c46.autoHeight = true;
+		let c47 = new haxe_ui_core_ItemRenderer();
 		c47.set_percentWidth(100.);
-		let c48 = new haxe_ui_components_Button();
-		c48.set_id("scriptCallRunBtn");
+		c47.set_layoutName("horizontal");
+		let c48 = new haxe_ui_components_Label();
+		c48.set_id("gameName");
 		c48.set_percentWidth(50.);
-		c48.set_text("Run Script Call");
+		c48.set_styleString("color:black;");
 		c47.addComponent(c48);
-		let c49 = new haxe_ui_components_Button();
-		c49.set_id("scriptCallClearBtn");
+		let c49 = new haxe_ui_components_TextField();
+		c49.set_id("itemAmount");
 		c49.set_percentWidth(50.);
-		c49.set_text("Clear Script Call");
 		c47.addComponent(c49);
 		c46.addComponent(c47);
-		c43.addComponent(c46);
-		c42.addComponent(c43);
-		c0.addComponent(c42);
+		c44.addComponent(c46);
+		c43.addComponent(c44);
+		c28.addComponent(c43);
+		c27.addComponent(c28);
+		c0.addComponent(c27);
+		let c50 = new haxe_ui_containers_Box();
+		c50.set_percentWidth(100.);
+		c50.set_percentHeight(100.);
+		c50.set_text("Game Switches And Variables");
+		c50.autoHeight = true;
+		let c51 = new haxe_ui_containers_VBox();
+		c51.set_percentWidth(100.);
+		c51.set_percentHeight(100.);
+		let c52 = new haxe_ui_containers_VBox();
+		c52.set_percentWidth(100.);
+		c52.set_percentHeight(50.);
+		let c53 = new haxe_ui_components_Label();
+		c53.set_percentWidth(100.);
+		c53.set_text(" Game Variables");
+		c53.set_styleString("font-size:18px; color:black");
+		c53.set_textAlign("left");
+		c52.addComponent(c53);
+		let c54 = new haxe_ui_containers_ListView();
+		c54.set_id("gameVariableList");
+		c54.set_percentWidth(100.);
+		c54.set_percentHeight(100.);
+		c54.set_selectedIndex(0);
+		c54.set_native(false);
+		c54.autoHeight = true;
+		let c55 = new haxe_ui_core_ItemRenderer();
+		c55.set_percentWidth(100.);
+		c55.set_layoutName("horizontal");
+		let c56 = new haxe_ui_components_Label();
+		c56.set_id("gameVariableName");
+		c56.set_percentWidth(50.);
+		c56.set_styleString("color:black;");
+		c55.addComponent(c56);
+		let c57 = new haxe_ui_components_TextField();
+		c57.set_id("gameVariableValue");
+		c57.set_percentWidth(50.);
+		c55.addComponent(c57);
+		c54.addComponent(c55);
+		c52.addComponent(c54);
+		let c58 = new haxe_ui_components_Button();
+		c58.set_id("updateVariables");
+		c58.set_text("Update Game Variables");
+		c52.addComponent(c58);
+		c51.addComponent(c52);
+		let c59 = new haxe_ui_containers_VBox();
+		c59.set_percentWidth(100.);
+		c59.set_percentHeight(50.);
+		let c60 = new haxe_ui_components_Label();
+		c60.set_percentWidth(100.);
+		c60.set_text("Game Switches List");
+		c60.set_styleString("font-size:18px; color:black");
+		c60.set_textAlign("left");
+		c59.addComponent(c60);
+		let c61 = new haxe_ui_containers_ListView();
+		c61.set_id("gameSwitchesList");
+		c61.set_percentWidth(100.);
+		c61.set_percentHeight(100.);
+		c61.set_selectedIndex(0);
+		c61.set_native(false);
+		c61.autoHeight = true;
+		let c62 = new haxe_ui_core_ItemRenderer();
+		c62.set_percentWidth(100.);
+		c62.set_layoutName("horizontal");
+		let c63 = new haxe_ui_components_Label();
+		c63.set_id("gameSwitchName");
+		c63.set_percentWidth(100.);
+		c63.set_styleString("color:black;");
+		c63.set_verticalAlign("left");
+		c62.addComponent(c63);
+		let c64 = new haxe_ui_components_CheckBox();
+		c64.set_id("gameSwitchValue");
+		c62.addComponent(c64);
+		c61.addComponent(c62);
+		c59.addComponent(c61);
+		c51.addComponent(c59);
+		c50.addComponent(c51);
+		c0.addComponent(c50);
+		let c65 = new haxe_ui_containers_Box();
+		c65.set_percentWidth(100.);
+		c65.set_percentHeight(100.);
+		c65.set_text("JS Advanced");
+		c65.autoHeight = true;
+		let c66 = new haxe_ui_containers_VBox();
+		c66.set_percentWidth(100.);
+		c66.set_percentHeight(100.);
+		let c67 = new haxe_ui_containers_Box();
+		c67.set_percentWidth(100.);
+		c67.set_percentHeight(90.);
+		let c68 = new haxe_ui_components_TextArea();
+		c68.set_id("scriptCallBox");
+		c68.set_percentWidth(100.);
+		c68.set_percentHeight(75.);
+		c68.set_wrap(false);
+		c68.set_placeholder("Enter your script calls here");
+		c67.addComponent(c68);
+		c66.addComponent(c67);
+		let c69 = new haxe_ui_containers_Box();
+		c69.set_percentWidth(100.);
+		c69.set_percentHeight(10.);
+		let c70 = new haxe_ui_containers_HBox();
+		c70.set_percentWidth(100.);
+		let c71 = new haxe_ui_components_Button();
+		c71.set_id("scriptCallRunBtn");
+		c71.set_percentWidth(50.);
+		c71.set_text("Run Script Call");
+		c70.addComponent(c71);
+		let c72 = new haxe_ui_components_Button();
+		c72.set_id("scriptCallClearBtn");
+		c72.set_percentWidth(50.);
+		c72.set_text("Clear Script Call");
+		c70.addComponent(c72);
+		c69.addComponent(c70);
+		c66.addComponent(c69);
+		c65.addComponent(c66);
+		c0.addComponent(c65);
 		this.addComponent(c0);
 		this.bindingRoot = true;
-		this.updateVariables = c35;
-		this.scriptCallRunBtn = c48;
-		this.scriptCallClearBtn = c49;
-		this.scriptCallBox = c45;
+		this.updateVariables = c58;
+		this.scriptCallRunBtn = c71;
+		this.scriptCallClearBtn = c72;
+		this.scriptCallBox = c68;
 		this.partyMemberList = c24;
 		this.partyGroup = c19;
 		this.partyGrid = c18;
@@ -31848,10 +32010,14 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		this.mapName = c4;
 		this.mapHeight = c6;
 		this.mapGroup = c3;
+		this.itemListBox = c28;
 		this.infoGrid = c2;
 		this.gold = c21;
-		this.gameVariableList = c31;
-		this.gameSwitchesList = c38;
+		this.gameWeaponList = c39;
+		this.gameVariableList = c54;
+		this.gameSwitchesList = c61;
+		this.gameItemList = c32;
+		this.gameArmorList = c46;
 		this.eventYCoordinate = c12;
 		this.eventXCoordinate = c11;
 		this.eventSpriteSheetName = c9;
@@ -31863,6 +32029,9 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 		this.eventFrequency = c14;
 		this.updateGameVariableList();
 		this.updateGameSwitchList();
+		this.updateGameItemList();
+		this.updateGameWeaponList();
+		this.updateGameArmorList();
 	}
 	updateGameVariableList() {
 		let dataSystem = $dataSystem;
@@ -31880,13 +32049,35 @@ class lunasurveyor_components_DebugInfo extends haxe_ui_containers_VBox {
 	updateGameSwitchList() {
 		let dataSystem = $dataSystem;
 		if(dataSystem != null) {
-			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 215, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
+			haxe_Log.trace("Update List",{ fileName : "src/lunasurveyor/components/MainView.hx", lineNumber : 252, className : "lunasurveyor.components.DebugInfo", methodName : "updateGameSwitchList"});
 			let _g = 1;
 			let _g1 = dataSystem.switches.length;
 			while(_g < _g1) {
 				let index = _g++;
 				if(this.gameSwitchesList.get_dataSource().get(index) == null) {
 					this.gameSwitchesList.get_dataSource().add({ gameSwitchName : "" + index + ": " + dataSystem.switches[index], gameSwitchValue : $gameSwitches.value(index)});
+				}
+			}
+		}
+	}
+	updateGameItemList() {
+		this.updateList($dataItems,this.gameItemList);
+	}
+	updateGameWeaponList() {
+		this.updateList($dataWeapons,this.gameWeaponList);
+	}
+	updateGameArmorList() {
+		this.updateList($dataArmors,this.gameArmorList);
+	}
+	updateList(data,listView) {
+		if(data != null) {
+			let _g = 1;
+			let _g1 = data.length;
+			while(_g < _g1) {
+				let index = _g++;
+				if(listView.get_dataSource().get(index) == null) {
+					let tmp = "" + index + ": " + data[index].name;
+					listView.get_dataSource().add({ gameName : tmp, itemAmount : 0});
 				}
 			}
 		}
@@ -31924,10 +32115,14 @@ Object.assign(lunasurveyor_components_DebugInfo.prototype, {
 	,mapName: null
 	,mapHeight: null
 	,mapGroup: null
+	,itemListBox: null
 	,infoGrid: null
 	,gold: null
+	,gameWeaponList: null
 	,gameVariableList: null
 	,gameSwitchesList: null
+	,gameItemList: null
+	,gameArmorList: null
 	,eventYCoordinate: null
 	,eventXCoordinate: null
 	,eventSpriteSheetName: null

@@ -1,5 +1,10 @@
 package lunasurveyor.components;
 
+import js.html.HtmlElement;
+import js.Browser;
+import js.html.Document;
+import haxe.ui.containers.ListView;
+import rm.types.RPG.BaseItem;
 import rm.managers.SceneManager;
 import rm.core.Utils;
 import rm.abstracts.objects.GameSwitches;
@@ -13,6 +18,8 @@ import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
 import rm.abstracts.objects.GameActor;
 import utils.Fn;
+
+using StringTools;
 
 @:build(haxe.ui.macros.ComponentMacros.build("src/lunasurveyor/components/main.xml")) class MainView extends VBox {
  public var menu: Menu = new Menu();
@@ -123,6 +130,15 @@ import utils.Fn;
   }
  }
 
+ @:bind(this.debugInfo.scriptCallBox, MouseEvent.CLICK)
+ public function setupTextArea(event: MouseEvent) {
+  var textArea: HtmlElement = cast Browser.document.getElementById("scriptCallBox")
+   .firstChild;
+  if (!textArea.style.cssText.contains("width")) {
+   textArea.style.cssText += "width:inherit;";
+  }
+ }
+
  @:bind(this.debugInfo.gameVariableList, MouseEvent.CLICK)
  public function updateGameVariable(event: MouseEvent) {
   this.debugInfo.updateGameVariableList();
@@ -138,6 +154,21 @@ import utils.Fn;
    this.debugInfo.gameSwitchesList.dataSource.update(index, list.selectedItem);
   }
   this.debugInfo.updateGameSwitchList();
+ }
+
+ @:bind(this.debugInfo.gameItemList, MouseEvent.CLICK)
+ public function updateGameItemList(event: MouseEvent) {
+  this.debugInfo.updateGameItemList();
+ }
+
+ @:bind(this.debugInfo.gameWeaponList, MouseEvent.CLICK)
+ public function updateGameWeapons(event: MouseEvent) {
+  this.debugInfo.updateGameWeaponList();
+ }
+
+ @:bind(this.debugInfo.gameArmorList, MouseEvent.CLICK)
+ public function updateGameArmor(event: MouseEvent) {
+  this.debugInfo.updateGameArmorList();
  }
 
  @:bind(this.debugInfo.updateVariables, MouseEvent.CLICK)
@@ -172,6 +203,9 @@ import utils.Fn;
   var code = this.debugInfo.scriptCallBox.value;
   var result = Fn.eval(code);
   Fn.JsLog("Script Call Evaluation Result = ", result);
+  this.debugInfo.scriptCallBox.styleString += "width:inherit;";
+
+  // trace(this.debugInfo.scriptCallBox.childComponents);
  }
 
  @:bind(this.debugInfo.scriptCallClearBtn, MouseEvent.CLICK)
@@ -193,6 +227,9 @@ class DebugInfo extends VBox {
   super();
   this.updateGameVariableList();
   this.updateGameSwitchList();
+  this.updateGameItemList();
+  this.updateGameWeaponList();
+  this.updateGameArmorList();
  }
 
  public function updateGameVariableList() {
@@ -218,6 +255,31 @@ class DebugInfo extends VBox {
      this.gameSwitchesList.dataSource.add({
       gameSwitchName: '${index}: ${dataSystem.switches[index]}',
       gameSwitchValue: Globals.GameSwitches.value(index)
+     });
+    }
+   }
+  }
+ }
+
+ public function updateGameItemList() {
+  updateList(Globals.DataItems, this.gameItemList);
+ }
+
+ public function updateGameWeaponList() {
+  updateList(Globals.DataWeapons, this.gameWeaponList);
+ }
+
+ public function updateGameArmorList() {
+  updateList(Globals.DataArmor, this.gameArmorList);
+ }
+
+ public function updateList(data: Array<BaseItem>, listView: ListView) {
+  if (data != null) {
+   for (index in 1...data.length) {
+    if (listView.dataSource.get(index) == null) {
+     listView.dataSource.add({
+      gameName: '${index}: ${data[index].name}',
+      itemAmount: 0
      });
     }
    }

@@ -20,6 +20,7 @@ class LunaDebug {
   Toolkit.init({
    container: Browser.document.body,
   });
+
   // Toolkit.theme = 'kenney';
   var element = Browser.document.createElement("style");
 
