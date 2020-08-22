@@ -20,7 +20,7 @@
 -dce full
 
 # RM Version for Conditional Compilation
--D compileMV
+# -D compileMV
 
 # Note you can call an hxml file inside an hxml file for build purposes.
 # For Compiling Separate JavaScript Files
@@ -30,5 +30,8 @@
 # You can also include other compiler .hxmls in your main compilation
 --next
 LunaSurveyor.hxml
+
+--next
+LunaSurveyorMV.hxml
 
 --cmd haxe -D gamePath=games/LunaTechsMZ --run CleanJs

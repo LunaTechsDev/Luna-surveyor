@@ -1,5 +1,5 @@
 //=============================================================================
-// Luna_Surveyor.js
+// Luna_SurveyorMV.js
 //=============================================================================
 //=============================================================================
 // Build Date: 2020-08-21 21:17:26
@@ -31187,9 +31187,7 @@ class lunasurveyor_components_MainView extends haxe_ui_containers_VBox {
 		this.debugInfoContainer.addComponent(this.debugInfo);
 	}
 	openNwJsConsole(event) {
-		if(Utils.isNwjs()) {
-			SceneManager.showDevTools();
-		}
+		Utils.isNwjs();
 	}
 	showDebugTools(event) {
 		this.debugInfoContainer.show();
